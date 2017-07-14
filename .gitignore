@@ -1,0 +1,13 @@
+.project
+*.swp
+nbproject
+.idea
+composer.phar
+composer.lock
+vendor
+set-env.sh
+snowflake_linux_x8664_odbc.tgz
+snowflake-odbc-2.13.6.x86_64.deb
+snowflake-odbc.deb
+snowflake_odbc_generic0.log
+.env

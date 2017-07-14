@@ -1,0 +1,21 @@
+{
+  "name": "keboola/snowflake-query-history",
+  "type": "keboola/php-db-import",
+  "require": {
+    "keboola/php-csv-db-import": "^3.0"
+  },
+  "authors": [
+    {
+      "name": "Martin Halamicek",
+      "email": "martin@keboola.com"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "Keboola\\SnowflakeQueryHistory\\": "src/Keboola/SnowflakeQueryHistory/"
+    }
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^6.2"
+  }
+}
