@@ -23,14 +23,8 @@ class Fetcher
 
     public function fetchHistory(callable $rowFetchedCallback, array $options = [])
     {
-        $start = date('Y-m-d H:i:s',isset($options['start']) ? (int) $options['start'] : strtotime('-1 days'));
-
-        if (isset($options['end'])) {
-            $end = date('Y-m-d H:i:s', (int) $options['end']);
-        } else {
-            $end = null;
-        }
-
+        $start = isset($options['start']) ? $options['start'] : date('Y-m-d H:i:s', strtotime('-1 days'));
+        $end = isset($options['end']) ? $options['end'] : null;
         $limit = isset($options['limit']) ? (int) $options['limit'] : 1000;
 
         do {

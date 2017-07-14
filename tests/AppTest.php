@@ -32,9 +32,10 @@ class AppTest extends \PHPUnit\Framework\TestCase
         $fetcher = new \Keboola\SnowflakeQueryHistory\Fetcher($this->connection);
 
         // run test queries which should be later fetched
+        $currentTimestamp = $this->connection->fetchAll('select current_timestamp() as current_timestamp')[0]['CURRENT_TIMESTAMP'];
         $query = sprintf("SELECT '%s'", rand());
-        $queryRepeatCount = 4;
-        for ($i = 0; $i <= $queryRepeatCount; $i++) {
+        $queryRepeatCount = 8;
+        for ($i = 0; $i < $queryRepeatCount; $i++) {
             $this->connection->query($query);
         }
 
@@ -43,14 +44,20 @@ class AppTest extends \PHPUnit\Framework\TestCase
             $results[] = $row;
         };
         $fetcher->fetchHistory($rowFetched, [
-            'limit' => 2,
-            'start' => strtotime('-1 minute'),
+            'limit' => 3,
+            'start' => $currentTimestamp
         ]);
 
         $matches = array_filter($results, function ($row) use ($query) {
             return $row['QUERY_TEXT'] === $query;
         });
-        $this->assertCount($queryRepeatCount, $matches);
+
+        // there are duplicates of first queries on page
+        $ids = array_unique(array_map(function($row) {
+            return $row['QUERY_ID'];
+        }, $matches));
+
+        $this->assertEquals($queryRepeatCount, count($ids));
     }
 
 }

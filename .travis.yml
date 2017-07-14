@@ -1,0 +1,11 @@
+sudo: required
+language: bash
+services:
+  - docker
+before_script:
+  - docker -v
+  - docker-compose -v
+  - docker-compose build
+script: docker-compose run --rm app php vendor/bin/phpunit  --colors=always
+after_success:
+  - docker images

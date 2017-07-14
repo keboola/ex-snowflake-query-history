@@ -2,7 +2,7 @@ version: '2'
 services:
   app:
     build: .
-    image: keboola/snowflake-query-history
+    image: keboola/ex-snowflake-query-history
     tty: true
     stdin_open: true
     command: bash
@@ -13,7 +13,7 @@ services:
       - SNOWFLAKE_DATABASE
       - SNOWFLAKE_WAREHOUSE
   dev:
-    image: keboola/snowflake-query-history
+    image: keboola/ex-snowflake-query-history
     tty: true
     stdin_open: true
     command: bash
