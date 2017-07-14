@@ -5,7 +5,10 @@ services:
 before_script:
   - docker -v
   - docker-compose -v
+  - docker-compose run --rm drivers-download composer install
+  - docker-compose run --rm drivers-download php docker/downloadOdbcDriver.php
   - docker-compose build
-script: docker-compose run --rm app php vendor/bin/phpunit  --colors=always
+script:
+  - docker-compose run --rm app php vendor/bin/phpunit  --colors=always
 after_success:
   - docker images

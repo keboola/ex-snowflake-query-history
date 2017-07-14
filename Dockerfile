@@ -20,7 +20,7 @@ RUN set -x \
  && docker-php-ext-install odbc \
  && docker-php-source delete
 
-ADD ./snowflake-odbc-2.13.6.x86_64.deb /tmp/snowflake-odbc.deb
+ADD ./snowflake-odbc.deb /tmp/snowflake-odbc.deb
 ADD ./docker/snowflake/simba.snowflake.ini /usr/lib/snowflake/odbc/lib/simba.snowflake.ini
 RUN apt-get install -y libnss3-tools && dpkg -i /tmp/snowflake-odbc.deb
 
