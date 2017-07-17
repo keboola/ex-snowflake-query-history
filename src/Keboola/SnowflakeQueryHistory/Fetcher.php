@@ -22,10 +22,12 @@ class Fetcher
 
     public function fetchHistory(callable $rowFetchedCallback, array $options = [])
     {
-        $start = isset($options['start']) ? $options['start'] : date('Y-m-d H:i:s', strtotime('-1 days'));
-        $end = isset($options['end']) ? $options['end'] : null;
+        if (!isset($options['start'])) {
+            throw new \Exception('start must be set');
+        }
         $limit = isset($options['limit']) ? (int) $options['limit'] : 1000;
 
+        $end = null;
         $rowNumber = 0;
         do {
             $results = $this->connection->fetchAll(sprintf(
@@ -34,7 +36,7 @@ class Fetcher
                   END_TIME_RANGE_END => %s,
                   RESULT_LIMIT => %d))
                   order by end_time DESC",
-                $start,
+                $options['start'],
                 $end === null ? 'current_timestamp()' : sprintf('TO_TIMESTAMP_LTZ(\'%s\')', $end),
                 $limit
             ));

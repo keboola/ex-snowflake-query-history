@@ -6,7 +6,6 @@
  * Time: 14:37
  */
 
-date_default_timezone_set('UTC');
 
 namespace  Keboola\SnowflakeQueryHistory;
 

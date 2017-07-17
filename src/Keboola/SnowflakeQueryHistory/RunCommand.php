@@ -44,10 +44,11 @@ class RunCommand extends Command
             }
 
             $decode = new JsonDecode(true);
-            $decoded = $decode->decode(file_get_contents($configFilePath), JsonEncoder::FORMAT);
+            $configDecoded = $decode->decode(file_get_contents($configFilePath), JsonEncoder::FORMAT);
+            $stateDecoded = $decode->decode(file_get_contents($stateFilePath), JsonEncoder::FORMAT);
 
             $processor = new Processor();
-            $parameters = $processor->processConfiguration(new ConfigDefinition(), [isset($decoded['parameters']) ? $decoded['parameters'] : []]);
+            $parameters = $processor->processConfiguration(new ConfigDefinition(), [isset($configDecoded['parameters']) ? $configDecoded['parameters'] : []]);
 
             $consoleOutput->writeln("Fetching query history from {$parameters['host']}");
 
@@ -70,21 +71,29 @@ class RunCommand extends Command
                 'rowsFetched' => 0,
             ];
 
-            $fetcher->fetchHistory(function ($queryRow, $rowNumber) use ($consoleOutput, $queriesCsvFile, $dataDirectory, &$stats) {
-                if ($rowNumber === 0) {
-                    // write header
-                    $queriesCsvFile->writeRow(array_keys($queryRow));
-                    // most recent query
-                    $stats['latestEndTime'] =$queryRow['END_TIME'];
-                }
+            $startTime = isset($stateDecoded['latestEndTime']) ? $stateDecoded['latestEndTime'] : date('Y-m-d H:i:s', strtotime('-1 days'));
+            $consoleOutput->writeln(sprintf("Fetching data from %s", $startTime));
 
-                if ($rowNumber > 0 && $rowNumber % 10000 === 0) {
-                    $consoleOutput->writeln(sprintf("%d queries fetched total", $rowNumber));
-                }
+            $fetcher->fetchHistory(
+                function ($queryRow, $rowNumber) use ($consoleOutput, $queriesCsvFile, $dataDirectory, &$stats) {
+                    if ($rowNumber === 0) {
+                        // write header
+                        $queriesCsvFile->writeRow(array_keys($queryRow));
+                        // most recent query
+                        $stats['latestEndTime'] =$queryRow['END_TIME'];
+                    }
 
-                $stats['rowsFetched'] = $rowNumber;
-                $queriesCsvFile->writeRow($queryRow);
-            });
+                    if ($rowNumber > 0 && $rowNumber % 10000 === 0) {
+                        $consoleOutput->writeln(sprintf("%d queries fetched total", $rowNumber));
+                    }
+
+                    $stats['rowsFetched'] = $rowNumber;
+                    $queriesCsvFile->writeRow($queryRow);
+                },
+                [
+                    'start' => $startTime,
+                ]
+            );
             $consoleOutput->writeln(sprintf("%d queries fetched total", $stats['rowsFetched']));
 
             // write state
@@ -95,6 +104,7 @@ class RunCommand extends Command
             // write manifest
             (new Filesystem())->dumpFile("$dataDirectory/out/tables/queries.csv.manifest", json_encode([
                 'primary_key' => 'QUERY_ID',
+                'incremental' => true,
             ]));
 
             return 0;
