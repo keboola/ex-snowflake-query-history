@@ -53,11 +53,11 @@ class RunCommand extends Command
             $parameters = $processor->processConfiguration(new ConfigDefinition(), [isset($decoded['parameters']) ? $decoded['parameters'] : []]);
 
             $connection = new \Keboola\Db\Import\Snowflake\Connection([
-                'host' => $parameters['db']['host'],
-                'user' => $parameters['db']['user'],
-                'password' => $parameters['db']['#password'],
-                'database' => $parameters['db']['database'],
-                'warehouse' => $parameters['db']['warehouse'],
+                'host' => $parameters['host'],
+                'user' => $parameters['user'],
+                'password' => $parameters['#password'],
+                'database' => $parameters['database'],
+                'warehouse' => $parameters['warehouse'],
             ]);
             $connection->query('alter session set timezone = \'UTC\'');
 

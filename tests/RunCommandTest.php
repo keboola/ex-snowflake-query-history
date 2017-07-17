@@ -66,13 +66,11 @@ class RunCommandTest extends \PHPUnit\Framework\TestCase
     {
         return [
             'parameters' => [
-                'db' => [
-                    'host' => getenv('SNOWFLAKE_HOST'),
-                    'database' => getenv('SNOWFLAKE_DATABASE'),
-                    'warehouse' => getenv('SNOWFLAKE_WAREHOUSE'),
-                    'user' => getenv('SNOWFLAKE_USER'),
-                    '#password' => getenv('SNOWFLAKE_PASSWORD'),
-                ],
+                'host' => getenv('SNOWFLAKE_HOST'),
+                'database' => getenv('SNOWFLAKE_DATABASE'),
+                'warehouse' => getenv('SNOWFLAKE_WAREHOUSE'),
+                'user' => getenv('SNOWFLAKE_USER'),
+                '#password' => getenv('SNOWFLAKE_PASSWORD'),
             ],
         ];
     }
