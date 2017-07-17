@@ -72,7 +72,7 @@ class RunCommand extends Command
             ];
 
             $startTime = isset($stateDecoded['latestEndTime']) ? $stateDecoded['latestEndTime'] : date('Y-m-d H:i:s', strtotime('-1 days'));
-            $consoleOutput->writeln(sprintf("Fetching data from %s", $startTime));
+            $consoleOutput->writeln(sprintf("Fetching data from %s (UTC)", $startTime));
 
             $fetcher->fetchHistory(
                 function ($queryRow, $rowNumber) use ($consoleOutput, $queriesCsvFile, $dataDirectory, &$stats) {
@@ -84,7 +84,7 @@ class RunCommand extends Command
                     }
 
                     if ($rowNumber > 0 && $rowNumber % 10000 === 0) {
-                        $consoleOutput->writeln(sprintf("%d queries fetched total", $rowNumber));
+                        $consoleOutput->writeln(sprintf("%d queries fetched total, last processed end time %s (UTC)", $rowNumber, $queryRow['END_TIME']));
                     }
 
                     $stats['rowsFetched'] = $rowNumber;
