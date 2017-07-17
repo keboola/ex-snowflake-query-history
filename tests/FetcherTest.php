@@ -34,10 +34,13 @@ class FetcherTest extends \PHPUnit\Framework\TestCase
         // run test queries which should be later fetched
         $currentTimestamp = $this->connection->fetchAll('select current_timestamp() as current_timestamp')[0]['CURRENT_TIMESTAMP'];
         $query = sprintf("SELECT '%s'", rand());
-        $queryRepeatCount = 17;
+        $queryRepeatCount = 8;
         for ($i = 0; $i < $queryRepeatCount; $i++) {
             $this->connection->query($query);
         }
+
+        // it looks like there is some delay before queries are searchable
+        sleep(10);
 
         $results = [];
         $rowFetched = function ($row) use(&$results) {
