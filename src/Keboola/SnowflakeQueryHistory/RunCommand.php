@@ -8,7 +8,6 @@
 
 namespace  Keboola\SnowflakeQueryHistory;
 
-
 use Keboola\Csv\CsvFile;
 use Symfony\Component\Config\Definition\Processor;
 use Symfony\Component\Console\Command\Command;
@@ -31,8 +30,6 @@ class RunCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $consoleOutput)
     {
-        $consoleOutput->writeln($input->getArgument('data directory'));
-
         $dataDirectory = $input->getArgument('data directory');
 
         try {
@@ -52,6 +49,8 @@ class RunCommand extends Command
             $processor = new Processor();
             $parameters = $processor->processConfiguration(new ConfigDefinition(), [isset($decoded['parameters']) ? $decoded['parameters'] : []]);
 
+            $consoleOutput->writeln("Fetching query history from {$parameters['host']}");
+
             $connection = new \Keboola\Db\Import\Snowflake\Connection([
                 'host' => $parameters['host'],
                 'user' => $parameters['user'],
@@ -66,18 +65,37 @@ class RunCommand extends Command
             (new Filesystem())->mkdir("$dataDirectory/out/tables");
             $queriesCsvFile = new CsvFile("$dataDirectory/out/tables/queries.csv");
 
-            $fetcher->fetchHistory(function ($queryRow, $rowNumber) use ($consoleOutput, $queriesCsvFile, $dataDirectory) {
+            $stats = [
+                'latestEndTime' => null,
+                'rowsFetched' => 0,
+            ];
+
+            $fetcher->fetchHistory(function ($queryRow, $rowNumber) use ($consoleOutput, $queriesCsvFile, $dataDirectory, &$stats) {
                 if ($rowNumber === 0) {
                     // write header
                     $queriesCsvFile->writeRow(array_keys($queryRow));
-
                     // most recent query
-                    (new Filesystem())->dumpFile("$dataDirectory/out/state.json", json_encode([
-                        'latestEndTime' => $queryRow['END_TIME'],
-                    ]));
+                    $stats['latestEndTime'] =$queryRow['END_TIME'];
                 }
+
+                if ($rowNumber > 0 && $rowNumber % 10000 === 0) {
+                    $consoleOutput->writeln(sprintf("%d queries fetched total", $rowNumber));
+                }
+
+                $stats['rowsFetched'] = $rowNumber;
                 $queriesCsvFile->writeRow($queryRow);
             });
+            $consoleOutput->writeln(sprintf("%d queries fetched total", $stats['rowsFetched']));
+
+            // write state
+            (new Filesystem())->dumpFile("$dataDirectory/out/state.json", json_encode([
+                'latestEndTime' => $stats['latestEndTime'],
+            ]));
+
+            // write manifest
+            (new Filesystem())->dumpFile("$dataDirectory/out/tables/queries.csv.manifest", json_encode([
+                'primary_key' => 'QUERY_ID',
+            ]));
 
             return 0;
         } catch (\Exception $e) {

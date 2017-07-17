@@ -9,7 +9,6 @@
 
 namespace  Keboola\SnowflakeQueryHistory;
 
-
 use Keboola\Db\Import\Snowflake\Connection;
 
 class Fetcher
@@ -47,5 +46,4 @@ class Fetcher
             $end = array_values(array_slice($results, -1))[0]['END_TIME'];
         } while (count($results) === $limit);
     }
-
 }

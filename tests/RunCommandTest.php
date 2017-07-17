@@ -1,5 +1,7 @@
 <?php
 
+namespace  Keboola\SnowflakeQueryHistory;
+
 class RunCommandTest extends \PHPUnit\Framework\TestCase
 {
 
@@ -47,19 +49,27 @@ class RunCommandTest extends \PHPUnit\Framework\TestCase
         $this->assertContains('QUERY_ID', $queriesOutputCsvFile->getHeader());
         $endTimeIndex = array_search('END_TIME', $queriesOutputCsvFile->getHeader());
 
+        // manifest is created
+        $this->assertFileExists($this->path . "/out/tables/queries.csv.manifest");
+
+        $manifest = (new \Symfony\Component\Serializer\Encoder\JsonDecode(true))->decode(file_get_contents($this->path . "/out/tables/queries.csv.manifest"), 'json');
+        $this->assertEquals('QUERY_ID', $manifest['primary_key']);
+        $this->assertTrue($manifest['incremental']);
+
         // most recent query end time should be stored in state
         $this->assertFileExists($this->path . "/out/state.json");
 
         $state = (new \Symfony\Component\Serializer\Encoder\JsonDecode(true))->decode(file_get_contents($this->path . "/out/state.json"), 'json');
         $this->assertArrayHasKey('latestEndTime', $state);
 
-        $endTimes = array_map(function($row) use ($endTimeIndex) {
+        $endTimes = array_map(function ($row) use ($endTimeIndex) {
             return $row[$endTimeIndex];
         }, iterator_to_array($queriesOutputCsvFile));
         array_shift($endTimes); // remove header
 
         $this->assertEquals(reset($endTimes), $state['latestEndTime']);
 
+        echo "\n" . $commandTester->getDisplay() . "\n";
     }
 
     private function createConfiguration()

@@ -9,7 +9,8 @@ before_script:
   - docker-compose run --rm drivers-download php docker/downloadOdbcDriver.php
   - docker-compose build
 script:
-  - docker-compose run --rm app php vendor/bin/phpunit  --colors=always
+  - docker-compose run --rm app ./vendor/bin/phpcs --standard=psr2 --ignore=vendor -n .
+  - docker-compose run --rm app ./vendor/bin/phpunit  --debug --colors=always
 after_success:
   - docker images
 deploy:

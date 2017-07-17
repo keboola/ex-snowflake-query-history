@@ -12,7 +12,6 @@ use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Output\ConsoleOutput;
 use Keboola\SnowflakeQueryHistory\RunCommand;
 
-
 $application = new Application;
 $application->add(new RunCommand());
 $application->run(null, new ConsoleOutput());

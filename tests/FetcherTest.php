@@ -8,6 +8,8 @@
 
 date_default_timezone_set('UTC');
 
+namespace  Keboola\SnowflakeQueryHistory;
+
 class FetcherTest extends \PHPUnit\Framework\TestCase
 {
     /**
@@ -43,7 +45,7 @@ class FetcherTest extends \PHPUnit\Framework\TestCase
         sleep(10);
 
         $results = [];
-        $rowFetched = function ($row) use(&$results) {
+        $rowFetched = function ($row) use (&$results) {
             $results[] = $row;
         };
         $fetcher->fetchHistory($rowFetched, [
@@ -56,11 +58,10 @@ class FetcherTest extends \PHPUnit\Framework\TestCase
         });
 
         // there are duplicates of first queries on page
-        $ids = array_unique(array_map(function($row) {
+        $ids = array_unique(array_map(function ($row) {
             return $row['QUERY_ID'];
         }, $matches));
 
         $this->assertEquals($queryRepeatCount, count($ids));
     }
-
 }
