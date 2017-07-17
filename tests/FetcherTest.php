@@ -60,9 +60,6 @@ class FetcherTest extends \PHPUnit\Framework\TestCase
             return $row['QUERY_ID'];
         }, $matches));
 
-        var_dump($ids);
-
-
         $this->assertEquals($queryRepeatCount, count($ids));
     }
 
