@@ -8,6 +8,6 @@
 
 namespace  Keboola\SnowflakeQueryHistory;
 
-
 class UserException extends \Exception
-{}
+{
+}

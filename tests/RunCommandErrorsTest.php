@@ -74,6 +74,4 @@ class RunCommandErrorsTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals(1, $commandTester->getStatusCode(), $commandTester->getDisplay());
         $this->assertStringStartsWith('Initializing Snowflake connection failed', $commandTester->getDisplay());
     }
-
-
 }

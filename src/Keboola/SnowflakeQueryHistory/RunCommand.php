@@ -134,6 +134,5 @@ class RunCommand extends Command
             'primary_key' => ['QUERY_ID'],
             'incremental' => true,
         ]));
-
     }
 }
