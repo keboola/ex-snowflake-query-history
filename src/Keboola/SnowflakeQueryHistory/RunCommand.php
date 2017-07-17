@@ -71,7 +71,7 @@ class RunCommand extends Command
                 'rowsFetched' => 0,
             ];
 
-            $startTime = isset($stateDecoded['latestEndTime']) ? $stateDecoded['latestEndTime'] : date('Y-m-d H:i:s', strtotime('-1 days'));
+            $startTime = isset($stateDecoded['latestEndTime']) ? $stateDecoded['latestEndTime'] : date('Y-m-d H:i:s', strtotime('-1 hour'));
             $consoleOutput->writeln(sprintf("Fetching data from %s (UTC)", $startTime));
 
             $fetcher->fetchHistory(
