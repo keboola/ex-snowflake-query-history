@@ -27,23 +27,24 @@ class Fetcher
         $end = isset($options['end']) ? $options['end'] : null;
         $limit = isset($options['limit']) ? (int) $options['limit'] : 1000;
 
+        $rowNumber = 0;
         do {
-            echo "Fetching $start -> $end\n";
             $results = $this->connection->fetchAll(sprintf(
                 "select * from table(information_schema.query_history(
                   END_TIME_RANGE_START => TO_TIMESTAMP_LTZ('%s'),
                   END_TIME_RANGE_END => %s,
                   RESULT_LIMIT => %d))
-                  order by end_time asc",
+                  order by end_time DESC",
                 $start,
                 $end === null ? 'current_timestamp()' : sprintf('TO_TIMESTAMP_LTZ(\'%s\')', $end),
                 $limit
             ));
-            $end = $results[0]['END_TIME'];
             foreach ($results as $row) {
-                $rowFetchedCallback($row);
+                $rowFetchedCallback($row, $rowNumber);
+                $rowNumber++;
             }
-            echo "Fetched " . count($results) . " results\n";
+            // get the last value with lowest END_TIME
+            $end = array_values(array_slice($results, -1))[0]['END_TIME'];
         } while (count($results) === $limit);
     }
 

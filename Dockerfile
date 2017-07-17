@@ -34,3 +34,6 @@ RUN curl -sS https://getcomposer.org/installer | php \
   && mv /code/composer.phar /usr/local/bin/composer \
   && composer install
 
+
+CMD php ./src/app.php run $KBC_DATADIR
+

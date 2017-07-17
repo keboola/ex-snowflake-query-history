@@ -5,13 +5,13 @@ services:
     image: keboola/ex-snowflake-query-history
     tty: true
     stdin_open: true
-    command: bash
     environment:
       - SNOWFLAKE_HOST
       - SNOWFLAKE_USER
       - SNOWFLAKE_PASSWORD
       - SNOWFLAKE_DATABASE
       - SNOWFLAKE_WAREHOUSE
+      - KBC_DATADIR=/data
   dev:
     image: keboola/ex-snowflake-query-history
     tty: true
@@ -25,6 +25,7 @@ services:
       - SNOWFLAKE_PASSWORD
       - SNOWFLAKE_DATABASE
       - SNOWFLAKE_WAREHOUSE
+      - KBC_DATADIR=/data
 
   drivers-download:
     build:

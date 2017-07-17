@@ -8,7 +8,7 @@
 
 date_default_timezone_set('UTC');
 
-class AppTest extends \PHPUnit\Framework\TestCase
+class FetcherTest extends \PHPUnit\Framework\TestCase
 {
     /**
      * @var  \Keboola\Db\Import\Snowflake\Connection
@@ -56,8 +56,6 @@ class AppTest extends \PHPUnit\Framework\TestCase
         $ids = array_unique(array_map(function($row) {
             return $row['QUERY_ID'];
         }, $matches));
-
-        var_dump($ids);
 
         $this->assertEquals($queryRepeatCount, count($ids));
     }
