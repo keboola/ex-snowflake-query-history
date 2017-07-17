@@ -5,7 +5,9 @@ ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update \
   && apt-get install unzip git unixODBC-dev libpq-dev -y
 
+## PHP Settings
 RUN echo "memory_limit = -1" >> /usr/local/etc/php/php.ini
+RUN echo "date.timezone = \"UTC\"" >> /usr/local/etc/php/php.ini
 
 RUN docker-php-ext-install pdo_pgsql pdo_mysql
 

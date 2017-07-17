@@ -50,14 +50,14 @@ class RunCommand extends Command
             $decoded = $decode->decode(file_get_contents($configFilePath), JsonEncoder::FORMAT);
 
             $processor = new Processor();
-            $configuration = $processor->processConfiguration(new ConfigDefinition(), [$decoded]);
+            $parameters = $processor->processConfiguration(new ConfigDefinition(), [isset($decoded['parameters']) ? $decoded['parameters'] : []]);
 
             $connection = new \Keboola\Db\Import\Snowflake\Connection([
-                'host' => $configuration['parameters']['db']['host'],
-                'user' => $configuration['parameters']['db']['user'],
-                'password' => $configuration['parameters']['db']['#password'],
-                'database' => $configuration['parameters']['db']['database'],
-                'warehouse' => $configuration['parameters']['db']['warehouse'],
+                'host' => $parameters['db']['host'],
+                'user' => $parameters['db']['user'],
+                'password' => $parameters['db']['#password'],
+                'database' => $parameters['db']['database'],
+                'warehouse' => $parameters['db']['warehouse'],
             ]);
             $connection->query('alter session set timezone = \'UTC\'');
 

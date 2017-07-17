@@ -1,7 +1,5 @@
 <?php
 
-date_default_timezone_set('UTC');
-
 class RunCommandTest extends \PHPUnit\Framework\TestCase
 {
 
@@ -40,7 +38,7 @@ class RunCommandTest extends \PHPUnit\Framework\TestCase
             'data directory' => $this->path,
         ]);
 
-        $this->assertEquals(0, $commandTester->getStatusCode());
+        $this->assertEquals(0, $commandTester->getStatusCode(), $commandTester->getDisplay());
 
         // queries should be fetched
         $this->assertFileExists($this->path . "/out/tables/queries.csv");
