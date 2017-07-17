@@ -12,3 +12,9 @@ script:
   - docker-compose run --rm app php vendor/bin/phpunit  --colors=always
 after_success:
   - docker images
+deploy:
+  provider: script
+  skip_cleanup: true
+  script: ./deploy.sh
+  on:
+    tags: true
