@@ -53,7 +53,7 @@ class RunCommandTest extends \PHPUnit\Framework\TestCase
         $this->assertFileExists($this->path . "/out/tables/queries.csv.manifest");
 
         $manifest = (new \Symfony\Component\Serializer\Encoder\JsonDecode(true))->decode(file_get_contents($this->path . "/out/tables/queries.csv.manifest"), 'json');
-        $this->assertEquals('QUERY_ID', $manifest['primary_key']);
+        $this->assertEquals(['QUERY_ID'], $manifest['primary_key']);
         $this->assertTrue($manifest['incremental']);
 
         // most recent query end time should be stored in state
