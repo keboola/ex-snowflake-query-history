@@ -125,7 +125,7 @@ class RunCommand extends Command
             ]
         );
         $consoleOutput->writeln(sprintf("%d queries fetched total, last processed query end time %s (UTC)", $stats['rowsFetched'], $stats['lastProcesssedQueryEndTime']));
-        $consoleOutput->writeln(sprintf("Latest query end time is %s. Next execution will fetch queries that have completed later."));
+        $consoleOutput->writeln(sprintf("Latest query end time is %s. Next execution will fetch queries that have completed later.", $stats['latestEndTime']));
 
         // write state
         (new Filesystem())->dumpFile("$dataDirectory/out/state.json", json_encode([
