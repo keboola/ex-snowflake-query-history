@@ -2,6 +2,33 @@
 
 [![Build Status](https://travis-ci.org/keboola/ex-snowflake-query-history.svg?branch=master)](https://travis-ci.org/keboola/ex-snowflake-query-history)
 
+This extractor is designed for continuous fetching of Snowflake query history. Every time the extractor configuration is executed queries which have completed since last extractor run are fetched. Extractor utilizes [Query history table functions](https://docs.snowflake.net/manuals/sql-reference/functions/query_history.html)
+
+### Configuration
+Extractor requires Snowflake credentials, database and usage permissions for warehouse.
+Which queries will be extracted depends on provided user's [permissions](https://docs.snowflake.net/manuals/sql-reference/functions/query_history.html#usage-notes).
+
+Following queries will create user with access to all queries associated for one warehouse:
+```
+create role keboola_monitoring;
+create database keboola_monitoring;
+grant ownership on database keboola_monitoring to role keboola_monitoring;
+
+# this is a warehouse where the QUERY_HISTORY queries wil be executed
+# this warehouse will be used in configuration
+grant usage on warehouse some_warehouse to role keboola_monitoring;
+
+# you can add permissions to one or more warehouses to monitor
+grant monitor on warehouse another_warehouse to role keboola_monitoring;
+
+
+create user keboola_monitoring
+password = 'PASSWORD'
+default_role = 'KEBOOLA_MONITORING';
+
+grant role keboola_monitoring to user keboola_monitoring;
+```
+
 
 ### Configuration Schema
 
