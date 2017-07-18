@@ -92,14 +92,15 @@ class RunCommand extends Command
         $stats = [
             'latestEndTime' => null,
             'rowsFetched' => 0,
+            'lastProcesssedQueryEndTime' => null,
         ];
 
         if (isset($stateDecoded['latestEndTime'])) {
             $startTime = $stateDecoded['latestEndTime'];
-            $consoleOutput->writeln(sprintf("Fetching data from %s (UTC) set by last execution.", $startTime));
+            $consoleOutput->writeln(sprintf("Fetching queries completed after %s (UTC) set by last execution.", $startTime));
         } else {
             $startTime = date('Y-m-d H:i:s', strtotime('-1 hour'));
-            $consoleOutput->writeln(sprintf("Fetching queries with from last hour - %s (UTC)", $startTime));
+            $consoleOutput->writeln(sprintf("Fetching queries completed in last hour - %s (UTC)", $startTime));
         }
 
         $fetcher->fetchHistory(
@@ -116,13 +117,15 @@ class RunCommand extends Command
                 }
 
                 $stats['rowsFetched'] = $rowNumber;
+                $stats['lastProcesssedQueryEndTime'] = $queryRow['END_TIME'];
                 $queriesCsvFile->writeRow($queryRow);
             },
             [
                 'start' => $startTime,
             ]
         );
-        $consoleOutput->writeln(sprintf("%d queries fetched total", $stats['rowsFetched']));
+        $consoleOutput->writeln(sprintf("%d queries fetched total, last processed query end time %s (UTC)", $stats['rowsFetched'], $stats['lastProcesssedQueryEndTime']));
+        $consoleOutput->writeln(sprintf("Latest query end time is %s. Next execution will fetch queries that have completed later."));
 
         // write state
         (new Filesystem())->dumpFile("$dataDirectory/out/state.json", json_encode([
