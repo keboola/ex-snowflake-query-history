@@ -31,7 +31,32 @@ class Fetcher
         $rowNumber = 0;
         do {
             $results = $this->connection->fetchAll(sprintf(
-                "select * from table(information_schema.query_history(
+                "select  
+                  query_id,
+                  substr(query_text, 0, 500000) as query_text,
+                  database_name,
+                  schema_name,
+                  query_type,
+                  session_id,
+                  user_name,
+                  role_name,
+                  warehouse_name,
+                  warehouse_size,
+                  warehouse_type,
+                  query_tag,
+                  execution_status,
+                  error_code,
+                  error_message,
+                  start_time,
+                  end_time,
+                  total_elapsed_time,
+                  compilation_time,
+                  execution_time,
+                  queued_provisioning_time,
+                  queued_repair_time,
+                  queued_overload_time,
+                  transaction_blocked_time
+                  from table(information_schema.query_history(
                   END_TIME_RANGE_START => TO_TIMESTAMP_LTZ('%s'),
                   END_TIME_RANGE_END => %s,
                   RESULT_LIMIT => %d))
