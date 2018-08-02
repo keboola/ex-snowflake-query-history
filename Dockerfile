@@ -3,7 +3,7 @@ MAINTAINER Martin Halamicek <martin@keboola.com>
 ENV DEBIAN_FRONTEND noninteractive
 
 RUN apt-get update \
-  && apt-get install unzip git unixodbc-dev libpq-dev -y
+  && apt-get install unzip git unixodbc-dev -y
 
 ## PHP Settings
 RUN echo "memory_limit = -1" >> /usr/local/etc/php/php.ini
@@ -26,7 +26,7 @@ RUN set -ex; \
 
 ADD ./snowflake-odbc.deb /tmp/snowflake-odbc.deb
 ADD ./docker/snowflake/simba.snowflake.ini /usr/lib/snowflake/odbc/lib/simba.snowflake.ini
-RUN apt-get install -y libnss3-tools && dpkg -i /tmp/snowflake-odbc.deb
+RUN dpkg -i /tmp/snowflake-odbc.deb
 
 # snowflake - charset settings
 ENV LANG en_US.UTF-8
