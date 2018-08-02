@@ -13,7 +13,7 @@ before_script:
     -e AWS_SECRET_ACCESS_KEY
     -v `pwd`:/code
     quay.io/keboola/aws-cli
-    s3 cp s3://keboola-configs/drivers/snowflake/snowflake-odbc-2.16.6.x86_64.deb /code/docker/snowflake-odbc.deb
+    s3 cp s3://keboola-configs/drivers/snowflake/snowflake-odbc-2.16.6.x86_64.deb /code/snowflake-odbc.deb
   - docker-compose build
 script:
   - docker-compose run --rm app ./vendor/bin/phpcs --standard=psr2 --ignore=vendor -n .
