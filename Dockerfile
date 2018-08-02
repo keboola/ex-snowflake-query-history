@@ -9,8 +9,6 @@ RUN apt-get update \
 RUN echo "memory_limit = -1" >> /usr/local/etc/php/php.ini
 RUN echo "date.timezone = \"UTC\"" >> /usr/local/etc/php/php.ini
 
-RUN docker-php-ext-install pdo_pgsql pdo_mysql
-
 # Snowflake ODBC
 # https://github.com/docker-library/php/issues/103#issuecomment-353674490
 RUN set -ex; \
