@@ -55,7 +55,10 @@ class Fetcher
                   queued_provisioning_time,
                   queued_repair_time,
                   queued_overload_time,
-                  transaction_blocked_time
+                  transaction_blocked_time,
+                  outbound_data_transfer_cloud,
+                  outbound_data_transfer_region,
+                  outbound_data_transfer_bytes
                   from table(information_schema.query_history(
                   END_TIME_RANGE_START => TO_TIMESTAMP_LTZ('%s'),
                   END_TIME_RANGE_END => %s,
