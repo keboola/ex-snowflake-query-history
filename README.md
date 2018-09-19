@@ -18,8 +18,8 @@ grant ownership on database keboola_monitoring to role keboola_monitoring;
 # this warehouse will be used in configuration
 grant usage on warehouse some_warehouse to role keboola_monitoring;
 
-# you can add permissions to one or more warehouses to monitor
-grant monitor on warehouse another_warehouse to role keboola_monitoring;
+# add monitor permission to access all queries executed in the warehouse
+grant monitor on warehouse some_warehouse to role keboola_monitoring;
 
 
 create user keboola_monitoring
