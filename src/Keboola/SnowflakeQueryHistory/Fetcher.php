@@ -73,7 +73,17 @@ class Fetcher
                 $rowNumber++;
             }
             // get the last value with lowest END_TIME
-            $end = array_values(array_slice($results, -1))[0]['END_TIME'];
+            $end = array_values(array_slice(self::filterRowsWithValidEndTime($results), -1))[0]['END_TIME'];
         } while (count($results) === $limit);
+    }
+
+    public static function filterRowsWithValidEndTime(array $results): array
+    {
+        return array_filter(
+            $results,
+            function ($row) {
+                return $row['END_TIME'] !== '1970-01-01 00:00:00';
+            }
+        );
     }
 }
