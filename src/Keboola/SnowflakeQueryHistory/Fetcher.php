@@ -43,12 +43,15 @@ class Fetcher
                   warehouse_name,
                   warehouse_size,
                   warehouse_type,
+                  CLUSTER_NUMBER,
                   query_tag,
                   execution_status,
                   error_code,
                   error_message,
                   start_time,
                   end_time,
+                  BYTES_SCANNED,
+                  ROWS_PRODUCED,
                   total_elapsed_time,
                   compilation_time,
                   execution_time,
@@ -58,7 +61,11 @@ class Fetcher
                   transaction_blocked_time,
                   outbound_data_transfer_cloud,
                   outbound_data_transfer_region,
-                  outbound_data_transfer_bytes
+                  outbound_data_transfer_bytes,
+                  INBOUND_DATA_TRANSFER_CLOUD,
+                  INBOUND_DATA_TRANSFER_REGION,
+                  INBOUND_DATA_TRANSFER_BYTES,
+                  CREDITS_USED_CLOUD_SERVICES
                   from table(information_schema.query_history(
                   END_TIME_RANGE_START => TO_TIMESTAMP_LTZ('%s'),
                   END_TIME_RANGE_END => %s,
