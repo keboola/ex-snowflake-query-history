@@ -1,6 +1,6 @@
 {
   "name": "keboola/snowflake-query-history",
-  "type": "keboola/php-db-import",
+  "type": "project",
   "require": {
     "keboola/php-csv-db-import": "^3.0",
     "symfony/console": "^3.3",
