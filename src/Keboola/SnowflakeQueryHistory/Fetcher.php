@@ -72,7 +72,7 @@ class Fetcher
                   RESULT_LIMIT => %d))
                   order by end_time DESC",
                 $options['start'],
-                $end === null ? 'current_timestamp()' : sprintf('TO_TIMESTAMP_LTZ(\'%s\')', $end),
+                $end === null ? 'dateadd(minute, -3, getdate())' : sprintf('TO_TIMESTAMP_LTZ(\'%s\')', $end),
                 $limit
             ));
             foreach ($results as $row) {

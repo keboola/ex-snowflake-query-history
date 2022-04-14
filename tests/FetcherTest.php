@@ -41,7 +41,7 @@ class FetcherTest extends \PHPUnit\Framework\TestCase
         }
 
         // it looks like there is some delay before queries are searchable
-        sleep(10);
+        sleep(190);
 
         $results = [];
         $rowFetched = function ($row) use (&$results) {

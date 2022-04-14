@@ -1,13 +1,39 @@
 FROM php:7.1
-MAINTAINER Martin Halamicek <martin@keboola.com>
-ENV DEBIAN_FRONTEND noninteractive
 
-RUN apt-get update \
-  && apt-get install unzip git unixodbc unixodbc-dev -y
+ARG COMPOSER_FLAGS="--prefer-dist --no-interaction"
+ARG DEBIAN_FRONTEND=noninteractive
 
-## PHP Settings
-RUN echo "memory_limit = -1" >> /usr/local/etc/php/php.ini
-RUN echo "date.timezone = \"UTC\"" >> /usr/local/etc/php/php.ini
+ARG SNOWFLAKE_ODBC_VERSION=2.22.5
+ARG SNOWFLAKE_GPG_KEY=37C7086698CB005C
+
+ENV LANGUAGE=en_US.UTF-8
+ENV LANG=en_US.UTF-8
+ENV LC_ALL=en_US.UTF-8
+
+ENV COMPOSER_ALLOW_SUPERUSER 1
+ENV COMPOSER_PROCESS_TIMEOUT 3600
+
+WORKDIR /code/
+
+COPY docker/php-prod.ini /usr/local/etc/php/php.ini
+COPY docker/composer-install.sh /tmp/composer-install.sh
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        git \
+        locales \
+        unzip \
+        unixodbc \
+        unixodbc-dev \
+        libpq-dev \
+        gpg \
+        debsig-verify \
+        dirmngr \
+        gpg-agent \
+	&& rm -r /var/lib/apt/lists/* \
+	&& sed -i 's/^# *\(en_US.UTF-8\)/\1/' /etc/locale.gen \
+	&& locale-gen \
+	&& chmod +x /tmp/composer-install.sh \
+	&& /tmp/composer-install.sh
 
 # Snowflake ODBC
 # https://github.com/docker-library/php/issues/103#issuecomment-353674490
@@ -24,20 +50,32 @@ RUN set -ex; \
     docker-php-ext-install odbc; \
     docker-php-source delete
 
-ADD ./snowflake-odbc.deb /tmp/snowflake-odbc.deb
-ADD ./docker/snowflake/simba.snowflake.ini /usr/lib/snowflake/odbc/lib/simba.snowflake.ini
-RUN dpkg -i /tmp/snowflake-odbc.deb
+## install snowflake drivers
+COPY ./docker/snowflake/generic.pol /etc/debsig/policies/$SNOWFLAKE_GPG_KEY/generic.pol
+ADD https://sfc-repo.azure.snowflakecomputing.com/odbc/linux/$SNOWFLAKE_ODBC_VERSION/snowflake-odbc-$SNOWFLAKE_ODBC_VERSION.x86_64.deb /tmp/snowflake-odbc.deb
+COPY ./docker/snowflake/simba.snowflake.ini /usr/lib/snowflake/odbc/lib/simba.snowflake.ini
 
-# snowflake - charset settings
-ENV LANG en_US.UTF-8
+RUN mkdir -p ~/.gnupg \
+    && chmod 700 ~/.gnupg \
+    && echo "disable-ipv6" >> ~/.gnupg/dirmngr.conf \
+    && mkdir -p /usr/share/debsig/keyrings/$SNOWFLAKE_GPG_KEY \
+    && if ! gpg --keyserver hkp://keys.gnupg.net --recv-keys $SNOWFLAKE_GPG_KEY; then \
+           gpg --keyserver hkp://keyserver.ubuntu.com --recv-keys $SNOWFLAKE_GPG_KEY;  \
+       fi \
+    && gpg --export $SNOWFLAKE_GPG_KEY > /usr/share/debsig/keyrings/$SNOWFLAKE_GPG_KEY/debsig.gpg \
+    && debsig-verify /tmp/snowflake-odbc.deb \
+    && gpg --batch --delete-key --yes $SNOWFLAKE_GPG_KEY \
+    && dpkg -i /tmp/snowflake-odbc.deb
 
+## Composer - deps always cached unless changed
+# First copy only composer files
+COPY composer.* /code/
+# Download dependencies, but don't run scripts or init autoloaders as the app is missing
+RUN composer install $COMPOSER_FLAGS --no-scripts --no-autoloader
+# copy rest of the app
 COPY . /code/
-WORKDIR /code
-
-RUN curl -sS https://getcomposer.org/installer | php \
-  && mv /code/composer.phar /usr/local/bin/composer \
-  && composer install
-
+# run normal composer - all deps are cached already
+RUN composer install $COMPOSER_FLAGS
 
 CMD php ./src/app.php run $KBC_DATADIR
 
