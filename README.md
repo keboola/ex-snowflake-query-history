@@ -78,3 +78,7 @@ grant role keboola_monitoring to user keboola_monitoring;
   }
 }
 ```
+
+## License
+
+MIT licensed, see [LICENSE](./LICENSE) file.
