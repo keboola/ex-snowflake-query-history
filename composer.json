@@ -4,7 +4,7 @@
   "license": "MIT",
   "type": "project",
   "require": {
-    "keboola/php-csv-db-import": "^3.0",
+    "keboola/php-csv-db-import": "^5.3",
     "symfony/console": "^3.3",
     "symfony/serializer": "^3.3",
     "symfony/filesystem": "^3.3",
