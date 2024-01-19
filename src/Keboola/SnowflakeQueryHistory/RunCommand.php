@@ -88,6 +88,7 @@ class RunCommand extends Command
 
         (new Filesystem())->mkdir("$dataDirectory/out/tables");
         $queriesCsvFile = new CsvFile("$dataDirectory/out/tables/queries.csv");
+        $queriesCsvFile->openFile('w+');
 
         $stats = [
             'latestEndTime' => null,
