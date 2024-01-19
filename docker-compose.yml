@@ -19,6 +19,7 @@ services:
     command: bash
     volumes:
       - ./:/code
+      - ./data/:/data
     environment:
       - SNOWFLAKE_HOST
       - SNOWFLAKE_USER

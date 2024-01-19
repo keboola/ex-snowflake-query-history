@@ -75,6 +75,9 @@ class Fetcher
                 $end === null ? 'dateadd(minute, -3, getdate())' : sprintf('TO_TIMESTAMP_LTZ(\'%s\')', $end),
                 $limit
             ));
+            if (empty($results)) {
+                break;
+            }
             foreach ($results as $row) {
                 $rowFetchedCallback($row, $rowNumber);
                 $rowNumber++;

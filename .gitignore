@@ -6,3 +6,4 @@ vendor
 set-env.sh
 snowflake_odbc_generic0.log
 .env
+data/
