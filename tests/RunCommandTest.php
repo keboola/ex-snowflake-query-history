@@ -44,10 +44,15 @@ class RunCommandTest extends \PHPUnit\Framework\TestCase
 
         // queries should be fetched
         $this->assertFileExists($this->path . "/out/tables/queries.csv");
+        $this->assertFileExists($this->path . "/out/tables/queries.csv.manifest");
 
         $queriesOutputCsvFile = new \Keboola\Csv\CsvFile($this->path . "/out/tables/queries.csv");
-        $this->assertContains('QUERY_ID', $queriesOutputCsvFile->getHeader());
-        $endTimeIndex = array_search('END_TIME', $queriesOutputCsvFile->getHeader());
+        $queriesManifestOutputCsvFile = json_decode(
+            file_get_contents($this->path . "/out/tables/queries.csv.manifest"),
+            true
+        );
+        $this->assertContains('QUERY_ID', $queriesManifestOutputCsvFile['columns']);
+        $endTimeIndex = array_search('END_TIME', $queriesManifestOutputCsvFile['columns']);
 
         // manifest is created
         $this->assertFileExists($this->path . "/out/tables/queries.csv.manifest");
@@ -65,7 +70,6 @@ class RunCommandTest extends \PHPUnit\Framework\TestCase
         $endTimes = array_map(function ($row) use ($endTimeIndex) {
             return $row[$endTimeIndex];
         }, iterator_to_array($queriesOutputCsvFile));
-        array_shift($endTimes); // remove header
 
         $this->assertEquals(reset($endTimes), $state['latestEndTime']);
 
