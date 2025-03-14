@@ -1,10 +1,10 @@
-FROM php:7.1
+FROM php:8.4
 
 ARG COMPOSER_FLAGS="--prefer-dist --no-interaction"
 ARG DEBIAN_FRONTEND=noninteractive
 
-ARG SNOWFLAKE_ODBC_VERSION=2.25.9
-ARG SNOWFLAKE_GPG_KEY=630D9F3CAB551AF3
+ARG SNOWFLAKE_ODBC_VERSION=3.5.0
+ARG SNOWFLAKE_GPG_KEY=5A125630709DD64B
 
 ENV LANGUAGE=en_US.UTF-8
 ENV LANG=en_US.UTF-8
@@ -58,14 +58,17 @@ COPY ./docker/snowflake/simba.snowflake.ini /usr/lib/snowflake/odbc/lib/simba.sn
 RUN mkdir -p ~/.gnupg \
     && chmod 700 ~/.gnupg \
     && echo "disable-ipv6" >> ~/.gnupg/dirmngr.conf \
+    && mkdir -p /etc/gnupg \
+    && echo "allow-weak-digest-algos" >> /etc/gnupg/gpg.conf \
     && mkdir -p /usr/share/debsig/keyrings/$SNOWFLAKE_GPG_KEY \
     && if ! gpg --keyserver hkp://keys.gnupg.net --recv-keys $SNOWFLAKE_GPG_KEY; then \
-           gpg --keyserver hkp://keyserver.ubuntu.com --recv-keys $SNOWFLAKE_GPG_KEY;  \
-       fi \
+      gpg --keyserver hkp://keyserver.ubuntu.com --recv-keys $SNOWFLAKE_GPG_KEY;  \
+    fi \
     && gpg --export $SNOWFLAKE_GPG_KEY > /usr/share/debsig/keyrings/$SNOWFLAKE_GPG_KEY/debsig.gpg \
     && debsig-verify /tmp/snowflake-odbc.deb \
     && gpg --batch --delete-key --yes $SNOWFLAKE_GPG_KEY \
-    && dpkg -i /tmp/snowflake-odbc.deb
+    && dpkg -i /tmp/snowflake-odbc.deb \
+    && rm /tmp/snowflake-odbc.deb
 
 ## Composer - deps always cached unless changed
 # First copy only composer files

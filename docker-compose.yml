@@ -1,7 +1,8 @@
-version: '2'
 services:
-  app:
-    build: .
+  app: &base
+    platform: linux/amd64
+    build:
+      context: .
     image: keboola/ex-snowflake-query-history
     tty: true
     stdin_open: true
@@ -12,18 +13,10 @@ services:
       - SNOWFLAKE_DATABASE
       - SNOWFLAKE_WAREHOUSE
       - KBC_DATADIR=/data
+
   dev:
-    image: keboola/ex-snowflake-query-history
-    tty: true
-    stdin_open: true
+    <<: *base
     command: bash
     volumes:
       - ./:/code
       - ./data/:/data
-    environment:
-      - SNOWFLAKE_HOST
-      - SNOWFLAKE_USER
-      - SNOWFLAKE_PASSWORD
-      - SNOWFLAKE_DATABASE
-      - SNOWFLAKE_WAREHOUSE
-      - KBC_DATADIR=/data
