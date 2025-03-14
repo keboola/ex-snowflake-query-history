@@ -9,15 +9,12 @@
 
 namespace  Keboola\SnowflakeQueryHistory;
 
-use Keboola\Db\Import\Snowflake\Connection;
+use Keboola\SnowflakeDbAdapter\Connection;
 
 class Fetcher
 {
-    private $connection;
-
-    public function __construct(Connection $connection)
+    public function __construct(private Connection $connection)
     {
-        $this->connection = $connection;
     }
 
     public function fetchHistory(callable $rowFetchedCallback, array $options = [])

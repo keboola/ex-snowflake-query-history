@@ -5,7 +5,8 @@
   "type": "project",
   "require": {
     "php": ">=8.4",
-    "keboola/php-component": "^10.0"
+    "keboola/php-component": "^10.0",
+    "keboola/db-adapter-snowflake": "^1.5"
   },
   "autoload": {
     "psr-4": {
@@ -15,6 +16,7 @@
   "scripts": {
     "tests": "phpunit --debug --colors=always",
     "phpcs": "phpcs --standard=psr2 --ignore=vendor -n .",
+    "phpstan": "phpstan analyse --no-progress --level=max -c ./phpstan.neon ./src",
     "build": [
       "@phpcs",
       "@tests"
@@ -23,5 +25,9 @@
       "@composer validate --no-check-publish --no-check-all",
       "@build"
     ]
+  },
+  "require-dev": {
+    "phpstan/phpstan": "^2.1",
+    "phpstan/phpstan-symfony": "^2.0"
   }
 }

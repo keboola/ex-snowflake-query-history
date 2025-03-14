@@ -9,6 +9,7 @@
 namespace  Keboola\SnowflakeQueryHistory;
 
 use Keboola\Csv\CsvFile;
+use Keboola\SnowflakeDbAdapter\Connection;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\Config\Definition\Processor;
 use Symfony\Component\Console\Command\Command;
@@ -71,13 +72,14 @@ class RunCommand extends Command
         }
 
         try {
-            $connection = new \Keboola\Db\Import\Snowflake\Connection([
+            $connection = new Connection([
                 'host' => $parameters['host'],
                 'user' => $parameters['user'],
                 'password' => $parameters['#password'],
                 'database' => $parameters['database'],
                 'warehouse' => $parameters['warehouse'],
             ]);
+
             $connection->query('alter session set timezone = \'UTC\'');
         } catch (SnowflakeImportException $e) {
             throw new UserException($e->getMessage(), $e->getCode(), $e);
