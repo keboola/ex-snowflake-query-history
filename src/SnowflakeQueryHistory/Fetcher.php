@@ -1,14 +1,10 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: martinhalamicek
- * Date: 14/07/2017
- * Time: 12:36
- */
 
+declare(strict_types=1);
 
 namespace  Keboola\SnowflakeQueryHistory;
 
+use Exception;
 use Keboola\SnowflakeDbAdapter\Connection;
 
 class Fetcher
@@ -17,18 +13,23 @@ class Fetcher
     {
     }
 
-    public function fetchHistory(callable $rowFetchedCallback, array $options = [])
+    /**
+     * @param array<string, int|string> $options
+     */
+    public function fetchHistory(callable $rowFetchedCallback, array $options = []): void
     {
         if (!isset($options['start'])) {
-            throw new \Exception('start must be set');
+            throw new Exception('start must be set');
         }
         $limit = isset($options['limit']) ? (int) $options['limit'] : 1000;
 
         $end = null;
         $rowNumber = 0;
         do {
-            $results = $this->connection->fetchAll(sprintf(
-                "select  
+            /** @var array<int, array<string, int|string>> $results */
+            $results = $this->connection->fetchAll(
+                sprintf(
+                    "select  
                   query_id,
                   substr(query_text, 0, 500000) as query_text,
                   database_name,
@@ -68,10 +69,11 @@ class Fetcher
                   END_TIME_RANGE_END => %s,
                   RESULT_LIMIT => %d))
                   order by end_time DESC",
-                $options['start'],
-                $end === null ? 'dateadd(minute, -3, getdate())' : sprintf('TO_TIMESTAMP_LTZ(\'%s\')', $end),
-                $limit
-            ));
+                    $options['start'],
+                    $end === null ? 'dateadd(minute, -3, getdate())' : sprintf('TO_TIMESTAMP_LTZ(\'%s\')', $end),
+                    $limit,
+                ),
+            );
             if (empty($results)) {
                 break;
             }
@@ -80,9 +82,15 @@ class Fetcher
                 $rowNumber++;
             }
             // get the last value with lowest END_TIME
-            $end = array_values(array_slice(self::filterRowsWithValidEndTime($results), -1))[0]['END_TIME'];
+            /** @var array<int, array<string, int|string>> $result */
+            $result = array_values(array_slice(self::filterRowsWithValidEndTime($results), -1));
+            $end = $result[0]['END_TIME'];
         } while (count($results) === $limit);
     }
+    /**
+     * @param array<int, array<string, int|string>> $results
+     * @return array<int, array<string, int|string>>
+     */
 
     public static function filterRowsWithValidEndTime(array $results): array
     {
@@ -90,7 +98,7 @@ class Fetcher
             $results,
             function ($row) {
                 return $row['END_TIME'] !== '1970-01-01 00:00:00';
-            }
+            },
         );
     }
 }

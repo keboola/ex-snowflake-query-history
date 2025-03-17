@@ -1,11 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Keboola\SnowflakeQueryHistory\Config;
 
 use Keboola\Component\Config\BaseConfig;
 
 class Config extends BaseConfig
 {
+    /**
+     * @return array<string, string>
+     */
     public function getConnectionConfig(): array
     {
         $options = [

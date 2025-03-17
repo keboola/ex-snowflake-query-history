@@ -1,7 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Keboola\SnowflakeQueryHistory;
 
+use Exception;
+use http\QueryString;
 use Keboola\Component\BaseComponent;
 use Keboola\Component\Config\BaseConfig;
 use Keboola\Csv\CsvWriter;
@@ -12,6 +16,7 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Serializer\Encoder\JsonDecode;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
+use Throwable;
 
 class Component extends BaseComponent
 {
@@ -24,7 +29,7 @@ class Component extends BaseComponent
         parent::__construct($logger);
 
         $this->connection = new Connection(
-            $this->getConfig()->getConnectionConfig()
+            $this->getConfig()->getConnectionConfig(),
         );
 
         $this->fetcher = new Fetcher($this->connection);
@@ -32,22 +37,27 @@ class Component extends BaseComponent
 
     protected function run(): void
     {
-        $stateFilePath = $this->getDataDir() . "/in/state.json";
+        $stateFilePath = $this->getDataDir() . '/in/state.json';
         if (!file_exists($stateFilePath)) {
-            throw new \Exception("State file not found at path $stateFilePath");
+            throw new Exception("State file not found at path $stateFilePath");
         }
 
         $decode = new JsonDecode([JsonDecode::ASSOCIATIVE => true]);
-        $stateDecoded = $decode->decode(file_get_contents($stateFilePath), JsonEncoder::FORMAT);
+        /** @var array<string, string> $stateDecoded */
+        $stateDecoded = $decode->decode((string) file_get_contents($stateFilePath), JsonEncoder::FORMAT);
 
         try {
             $this->connection->query('alter session set timezone = \'UTC\'');
-        } catch (\Exception $e) {
+        } catch (Throwable $e) {
             throw new UserException($e->getMessage(), $e->getCode(), $e);
         }
 
         $fileName = $this->getDataDir() . '/out/tables/queries.csv';
         $file = fopen($fileName, 'a');
+        if ($file === false) {
+            throw new Exception("Cannot open file $fileName for writing");
+        }
+
         $csvFile = new CsvWriter($file);
 
         $stats = [
@@ -63,7 +73,8 @@ class Component extends BaseComponent
         }
 
         $this->fetcher->fetchHistory(
-            function ($queryRow, $rowNumber) use ($csvFile, &$stats) {
+            function (array $queryRow, int $rowNumber) use ($csvFile, &$stats): void {
+                /** @var array<string, string|int> $queryRow */
                 if ($rowNumber === 0) {
                     // most recent query
                     $stats['latestEndTime'] = $queryRow['END_TIME'];
@@ -75,19 +86,27 @@ class Component extends BaseComponent
             },
             [
                 'start' => $startTime,
-            ]
+            ],
         );
 
         // write state
-        (new Filesystem())->dumpFile($this->getDataDir() . "/out/state.json", json_encode([
-            'latestEndTime' => $stats['latestEndTime'],
-        ]));
+        (new Filesystem())->dumpFile(
+            $this->getDataDir() . '/out/state.json',
+            (string) json_encode(
+                [
+                'latestEndTime' => $stats['latestEndTime'],
+                ],
+            ),
+        );
 
         // write manifest
-        (new Filesystem())->dumpFile($this->getDataDir() . "/out/tables/queries.csv.manifest", json_encode([
-            'primary_key' => ['QUERY_ID'],
-            'incremental' => true,
-            'columns' => [
+        (new Filesystem())->dumpFile(
+            $this->getDataDir() . '/out/tables/queries.csv.manifest',
+            (string) json_encode(
+                [
+                'primary_key' => ['QUERY_ID'],
+                'incremental' => true,
+                'columns' => [
                 'QUERY_ID',
                 'QUERY_TEXT',
                 'DATABASE_NAME',
@@ -122,13 +141,17 @@ class Component extends BaseComponent
                 'INBOUND_DATA_TRANSFER_REGION',
                 'INBOUND_DATA_TRANSFER_BYTES',
                 'CREDITS_USED_CLOUD_SERVICES',
-            ],
-        ]));
+                ],
+                ],
+            ),
+        );
     }
 
     public function getConfig(): Config
     {
-        /** @var Config $config */
+        /**
+ * @var Config $config
+*/
         $config = $this->config;
 
         return $config;
