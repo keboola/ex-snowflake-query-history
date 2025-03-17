@@ -13,15 +13,19 @@ class FetcherTest extends TestCase
 
     public function setUp(): void
     {
-        $this->connection = new Connection([
+        $options = [
             'host' => getenv('SNOWFLAKE_HOST'),
             'user' => getenv('SNOWFLAKE_USER'),
             'password' => getenv('SNOWFLAKE_PASSWORD') ?? '',
             'database' => getenv('SNOWFLAKE_DATABASE'),
             'warehouse' => getenv('SNOWFLAKE_WAREHOUSE'),
-            'keyPair' => getenv('SNOWFLAKE_KEYPAIR'),
-        ]);
+        ];
 
+        if (getenv('SNOWFLAKE_KEYPAIR') !== false) {
+            $options['keyPair'] = getenv('SNOWFLAKE_KEYPAIR');
+        }
+
+        $this->connection = new Connection($options);
         $this->connection->query('alter session set timezone = \'UTC\'');
     }
 

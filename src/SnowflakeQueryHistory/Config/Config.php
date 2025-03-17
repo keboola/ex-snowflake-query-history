@@ -30,6 +30,6 @@ class Config extends BaseConfig
 
     private function hasKeyPair(): bool
     {
-        return !empty($this->getValue(['parameters', '#keyPair']));
+        return !empty($this->getValue(['parameters', '#keyPair'], ''));
     }
 }
