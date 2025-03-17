@@ -7,16 +7,30 @@ use Keboola\Component\Config\BaseConfig;
 use Keboola\SnowflakeDbAdapter\Connection;
 use Keboola\SnowflakeQueryHistory\Config\Config;
 use Keboola\SnowflakeQueryHistory\Config\ConfigDefinition;
+use Psr\Log\LoggerInterface;
 
 class Component extends BaseComponent
 {
-    protected function run(): void
+    private Connection $connection;
+
+    private Fetcher $fetcher;
+
+    public function __construct(LoggerInterface $logger)
     {
-        $connection = new Connection(
+        parent::__construct($logger);
+
+        $this->connection = new Connection(
             $this->getConfig()->getConnectionConfig()
         );
 
-        $connection->fetchAll('SELECT 1');
+        $this->fetcher = new Fetcher($this->connection);
+    }
+
+    protected function run(): void
+    {
+        $this->connection->fetchAll(
+            'SELECT 1'
+        );
     }
 
     public function getConfig(): Config
