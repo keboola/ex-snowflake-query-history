@@ -54,13 +54,7 @@ class Component extends BaseComponent
 
         $this->getLogger()->info("Fetching query history from {$this->getConfig()->getHost()}");
 
-        $fileName = $this->getDataDir() . '/out/tables/queries.csv';
-        $file = fopen($fileName, 'a');
-        if ($file === false) {
-            throw new Exception("Cannot open file $fileName for writing");
-        }
-
-        $csvFile = new CsvWriter($file);
+        $csvFile = new CsvWriter($this->getDataDir() . '/out/tables/queries.csv');
 
         $stats = [
             'latestEndTime' => null,
