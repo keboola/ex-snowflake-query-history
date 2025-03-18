@@ -1,0 +1,4 @@
+Fetching query history from kebooladev.snowflakecomputing.com
+Fetching queries completed in last hour - [0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} \(UTC\)
+[0-9]* queries fetched total, last processed query end time [0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]{3} \(UTC\)
+Latest query end time is [0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]{3} \(UTC\). Next execution will fetch queries that have completed later.

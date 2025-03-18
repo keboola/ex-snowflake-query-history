@@ -11,6 +11,18 @@ use Symfony\Component\Process\Process;
 
 class DatadirTest extends DatadirTestCase
 {
+    public static function assertStringMatchesFormat(string $format, string $string, string $message = ''): void
+    {
+        $expectedOutput = explode("\n", trim($format));
+        $actualOutput = explode("\n", trim($string));
+
+        foreach ($expectedOutput as $key => $line) {
+            echo $line . PHP_EOL;
+            echo $actualOutput[$key] . PHP_EOL;
+            self::assertTrue(preg_match('/'.$line.'/', $actualOutput[$key]) === 1);
+        }
+    }
+
     #[Override]
     public function assertDirectoryContentsSame(string $expected, string $actual): void
     {
