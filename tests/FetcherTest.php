@@ -36,7 +36,7 @@ class FetcherTest extends TestCase
         // run test queries which should be later fetched
         $currentTimestamp = $this->connection
             ->fetchAll('select current_timestamp() as current_timestamp')[0]['CURRENT_TIMESTAMP'];
-        $query = sprintf("SELECT '%s'", rand());
+        $query = sprintf("SELECT '%s'", rand(990000, 999999));
         $queryRepeatCount = 8;
         for ($i = 0; $i < $queryRepeatCount; $i++) {
             $this->connection->query($query);
