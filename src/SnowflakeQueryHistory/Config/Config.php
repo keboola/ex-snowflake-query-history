@@ -28,6 +28,11 @@ class Config extends BaseConfig
         return $options;
     }
 
+    public function getHost(): string
+    {
+        return $this->getStringValue(['parameters', 'host']);
+    }
+
     private function hasKeyPair(): bool
     {
         return !empty($this->getValue(['parameters', '#keyPair'], ''));

@@ -52,6 +52,8 @@ class Component extends BaseComponent
             throw new UserException($e->getMessage(), $e->getCode(), $e);
         }
 
+        $this->getLogger()->info("Fetching query history from {$this->getConfig()->getHost()}");
+
         $fileName = $this->getDataDir() . '/out/tables/queries.csv';
         $file = fopen($fileName, 'a');
         if ($file === false) {
@@ -68,8 +70,13 @@ class Component extends BaseComponent
 
         if (isset($stateDecoded['latestEndTime'])) {
             $startTime = $stateDecoded['latestEndTime'];
+            $this->getLogger()->info(sprintf(
+                'Fetching queries completed after %s (UTC) set by last execution.',
+                $startTime,
+            ));
         } else {
             $startTime = date('Y-m-d H:i:s', strtotime('-1 hour'));
+            $this->getLogger()->info(sprintf('Fetching queries completed in last hour - %s (UTC)', $startTime));
         }
 
         $this->fetcher->fetchHistory(
@@ -80,6 +87,14 @@ class Component extends BaseComponent
                     $stats['latestEndTime'] = $queryRow['END_TIME'];
                 }
 
+                if ($rowNumber > 0 && $rowNumber % 10000 === 0) {
+                    $this->getLogger()->info(sprintf(
+                        '%d queries fetched total, last processed query end time %s (UTC)',
+                        $rowNumber,
+                        $queryRow['END_TIME'],
+                    ));
+                }
+
                 $stats['rowsFetched'] = $rowNumber;
                 $stats['lastProcesssedQueryEndTime'] = $queryRow['END_TIME'];
                 $csvFile->writeRow($queryRow);
@@ -88,6 +103,17 @@ class Component extends BaseComponent
                 'start' => $startTime,
             ],
         );
+
+        $this->getLogger()->info(sprintf(
+            '%d queries fetched total, last processed query end time %s (UTC)',
+            $stats['rowsFetched'],
+            $stats['lastProcesssedQueryEndTime'],
+        ));
+
+        $this->getLogger()->info(sprintf(
+            'Latest query end time is %s (UTC). Next execution will fetch queries that have completed later.',
+            $stats['latestEndTime'],
+        ));
 
         // write state
         (new Filesystem())->dumpFile(
