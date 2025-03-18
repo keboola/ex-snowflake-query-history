@@ -1,0 +1,9 @@
+{
+  "parameters": {
+    "host": "%env(string:SNOWFLAKE_HOST)%",
+    "user": "%env(string:SNOWFLAKE_USER)%",
+    "#password": "%env(string:SNOWFLAKE_PASSWORD)%",
+    "database": "%env(string:SNOWFLAKE_DATABASE)%",
+    "warehouse": "%env(string:SNOWFLAKE_WAREHOUSE)%"
+  }
+}
