@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace  Keboola\SnowflakeQueryHistory;
+namespace Keboola\SnowflakeQueryHistory;
 
 use Exception;
 use Keboola\SnowflakeDbAdapter\Connection;
