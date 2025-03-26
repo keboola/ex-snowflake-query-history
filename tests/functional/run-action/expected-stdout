@@ -1,4 +1,4 @@
 Fetching query history from kebooladev.snowflakecomputing.com
-Fetching queries completed in last hour - %s
-%i queries fetched total, last processed query end time %s
-Latest query end time is %s. Next execution will fetch queries that have completed later.
+Fetching queries completed in last hour - %s (UTC)
+%i queries fetched total, last processed query end time %s (UTC)
+Latest query end time is %s (UTC). Next execution will fetch queries that have completed later.
