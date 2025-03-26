@@ -169,9 +169,7 @@ class Component extends BaseComponent
 
     public function getConfig(): Config
     {
-        /**
- * @var Config $config
-*/
+        /** @var Config $config */
         $config = $this->config;
 
         return $config;
