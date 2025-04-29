@@ -21,8 +21,8 @@ class Config extends BaseConfig
             'database' => $this->getStringValue(['parameters', 'database']),
         ];
 
-        if ($this->hasKeyPair()) {
-            $options['keyPair'] = $this->getStringValue(['parameters', '#keyPair']);
+        if ($this->hasPrivateKey()) {
+            $options['privateKey'] = $this->getStringValue(['parameters', '#privateKey']);
         }
 
         return $options;
@@ -33,8 +33,8 @@ class Config extends BaseConfig
         return $this->getStringValue(['parameters', 'host']);
     }
 
-    private function hasKeyPair(): bool
+    private function hasPrivateKey(): bool
     {
-        return !empty($this->getValue(['parameters', '#keyPair'], ''));
+        return !empty($this->getValue(['parameters', '#privateKey'], ''));
     }
 }

@@ -21,8 +21,8 @@ class FetcherTest extends TestCase
             'warehouse' => getenv('SNOWFLAKE_WAREHOUSE'),
         ];
 
-        if (getenv('SNOWFLAKE_KEYPAIR') !== false) {
-            $options['keyPair'] = getenv('SNOWFLAKE_KEYPAIR');
+        if (getenv('SNOWFLAKE_PRIVATEKEY') !== false) {
+            $options['privateKey'] = getenv('SNOWFLAKE_PRIVATEKEY');
         }
 
         $this->connection = new Connection($options);
