@@ -79,7 +79,7 @@ APILevel=1
 ConnectFunctions=YYY
 Description=Snowflake DSII
 Driver=/usr/lib/snowflake/odbc/lib/libSnowflake.so
-DriverODBCVer=3.10.0
+DriverODBCVer=${SNOWFLAKE_ODBC_VERSION}
 SQLLevel=1
 EOF
 
