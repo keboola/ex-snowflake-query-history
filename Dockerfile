@@ -1,10 +1,10 @@
-FROM php:8.4-cli-bullseye
+FROM php:8.4-cli-trixie
 
 ARG COMPOSER_FLAGS="--prefer-dist --no-interaction"
 ARG DEBIAN_FRONTEND=noninteractive
 
-ARG SNOWFLAKE_ODBC_VERSION=3.5.0
-ARG SNOWFLAKE_GPG_KEY=5A125630709DD64B
+ARG SNOWFLAKE_ODBC_VERSION=3.10.0
+ARG SNOWFLAKE_GPG_KEY=2A3149C82551A34A
 
 ENV LANGUAGE=en_US.UTF-8
 ENV LANG=en_US.UTF-8
@@ -69,6 +69,19 @@ RUN mkdir -p ~/.gnupg \
     && gpg --batch --delete-key --yes $SNOWFLAKE_GPG_KEY \
     && dpkg -i /tmp/snowflake-odbc.deb \
     && rm /tmp/snowflake-odbc.deb
+
+RUN cat <<EOF > /etc/odbcinst.ini
+[ODBC Drivers]
+SnowflakeDSIIDriver=Installed
+
+[SnowflakeDSIIDriver]
+APILevel=1
+ConnectFunctions=YYY
+Description=Snowflake DSII
+Driver=/usr/lib/snowflake/odbc/lib/libSnowflake.so
+DriverODBCVer=${SNOWFLAKE_ODBC_VERSION}
+SQLLevel=1
+EOF
 
 ## Composer - deps always cached unless changed
 # First copy only composer files
