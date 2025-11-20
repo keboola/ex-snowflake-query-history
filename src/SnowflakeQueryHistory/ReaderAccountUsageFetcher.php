@@ -13,12 +13,14 @@ class ReaderAccountUsageFetcher extends Fetcher
                 SELECT  
                 %s
                 FROM SNOWFLAKE.READER_ACCOUNT_USAGE.QUERY_HISTORY
-                WHERE end_time >= TO_TIMESTAMP_LTZ('%s')
+                WHERE start_time >= DATEADD(day, -7, TO_TIMESTAMP_LTZ('%s')) 
+                    AND end_time >= TO_TIMESTAMP_LTZ('%s')
                     AND end_time <= %s
                 ORDER BY end_time DESC
                 LIMIT %d
                 SQL,
             $this->getQueryColumns(),
+            $start,
             $start,
             $end === null ? 'dateadd(minute, -3, getdate())' : sprintf('TO_TIMESTAMP_LTZ(\'%s\')', $end),
             $limit,
