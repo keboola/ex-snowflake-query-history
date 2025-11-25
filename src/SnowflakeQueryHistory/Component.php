@@ -8,6 +8,7 @@ use Exception;
 use Keboola\Component\BaseComponent;
 use Keboola\Csv\CsvWriter;
 use Keboola\SnowflakeDbAdapter\Connection;
+use Keboola\SnowflakeDbAdapter\Exception\RuntimeException;
 use Keboola\SnowflakeQueryHistory\Config\Config;
 use Keboola\SnowflakeQueryHistory\Config\ConfigDefinition;
 use Psr\Log\LoggerInterface;
@@ -67,9 +68,16 @@ class Component extends BaseComponent
             'readerAccountLastProcessedQueryEndTime' => null,
         ];
 
+        $stateEncode = [
+            'latestEndTime' => null,
+            'readerAccountLatestEndTime' => null,
+        ];
+
         // INFORMATION_SCHEMA.QUERY_HISTORY()
         if (isset($stateDecoded['latestEndTime'])) {
             $startTime = $stateDecoded['latestEndTime'];
+            $stateEncode['latestEndTime'] = $startTime;
+
             $this->getLogger()->info(sprintf(
                 'INFORMATION_SCHEMA: Fetching queries completed after %s (UTC) set by last execution.',
                 $startTime,
@@ -118,9 +126,14 @@ class Component extends BaseComponent
             $stats['latestEndTime'],
         ));
 
+        $stateEncode['latestEndTime'] = $stats['latestEndTime'];
+        $this->writeManifest($this->getDataDir() . '/out/tables/queries.csv.manifest');
+
         // READER_ACCOUNT_USAGE.QUERY_HISTORY
         if (isset($stateDecoded['readerAccountLatestEndTime'])) {
             $readerAccountStartTime = $stateDecoded['readerAccountLatestEndTime'];
+            $stateEncode['readerAccountLatestEndTime'] = $readerAccountStartTime;
+
             $this->getLogger()->info(sprintf(
                 'READER_ACCOUNT_USAGE: Fetching queries completed after %s (UTC) set by last execution.',
                 $readerAccountStartTime,
@@ -133,52 +146,53 @@ class Component extends BaseComponent
             ));
         }
 
-        $this->readerAccountFetcher->fetchHistory(
-            function (array $queryRow, int $rowNumber) use ($readerAccountQueries, &$stats): void {
-                /** @var array<string, string|int> $queryRow */
-                if ($rowNumber === 0) {
-                    // most recent query
-                    $stats['readerAccountLatestEndTime'] = $queryRow['END_TIME'];
-                }
+        try {
+            $this->readerAccountFetcher->fetchHistory(
+                function (array $queryRow, int $rowNumber) use ($readerAccountQueries, &$stats): void {
+                    /** @var array<string, string|int> $queryRow */
+                    if ($rowNumber === 0) {
+                        // most recent query
+                        $stats['readerAccountLatestEndTime'] = $queryRow['END_TIME'];
+                    }
 
-                if ($rowNumber > 0 && $rowNumber % 10000 === 0) {
-                    $this->getLogger()->info(sprintf(
-                        'READER_ACCOUNT_USAGE: %d queries fetched total, last processed query end time %s (UTC)',
-                        $rowNumber,
-                        $queryRow['END_TIME'],
-                    ));
-                }
+                    if ($rowNumber > 0 && $rowNumber % 10000 === 0) {
+                        $this->getLogger()->info(sprintf(
+                            'READER_ACCOUNT_USAGE: %d queries fetched total, last processed query end time %s (UTC)',
+                            $rowNumber,
+                            $queryRow['END_TIME'],
+                        ));
+                    }
 
-                $stats['readerAccountRowsFetched'] = $rowNumber;
-                $stats['readerAccountLastProcessedQueryEndTime'] = $queryRow['END_TIME'];
-                $readerAccountQueries->writeRow($queryRow);
-            },
-            [
-                'start' => $readerAccountStartTime,
-            ],
-        );
+                    $stats['readerAccountRowsFetched'] = $rowNumber;
+                    $stats['readerAccountLastProcessedQueryEndTime'] = $queryRow['END_TIME'];
+                    $readerAccountQueries->writeRow($queryRow);
+                },
+                [
+                    'start' => $readerAccountStartTime,
+                ],
+            );
 
-        $this->getLogger()->info(sprintf(
-            'READER_ACCOUNT_USAGE: %d queries fetched total, last processed query end time %s (UTC)',
-            $stats['readerAccountRowsFetched'],
-            $stats['readerAccountLastProcessedQueryEndTime'],
-        ));
+            $this->getLogger()->info(sprintf(
+                'READER_ACCOUNT_USAGE: %d queries fetched total, last processed query end time %s (UTC)',
+                $stats['readerAccountRowsFetched'],
+                $stats['readerAccountLastProcessedQueryEndTime'],
+            ));
 
-        $this->getLogger()->info(sprintf(
-            'READER_ACCOUNT_USAGE: Latest query end time is %s (UTC). Next execution will fetch queries that have completed later.', // phpcs:ignore
-            $stats['readerAccountLatestEndTime'],
-        ));
+            $this->getLogger()->info(sprintf(
+                'READER_ACCOUNT_USAGE: Latest query end time is %s (UTC). Next execution will fetch queries that have completed later.', // phpcs:ignore
+                $stats['readerAccountLatestEndTime'],
+            ));
+        } catch (RuntimeException $e) {
+            $this->getLogger()->error($e->getMessage());
+        }
+
+        $stateEncode['readerAccountLatestEndTime'] = $stats['readerAccountLatestEndTime'];
+        $this->writeManifest($this->getDataDir() . '/out/tables/queries_reader_account.csv.manifest');
 
         (new Filesystem())->dumpFile(
             $this->getDataDir() . '/out/state.json',
-            (string) json_encode([
-                'latestEndTime' => $stats['latestEndTime'],
-                'readerAccountLatestEndTime' => $stats['readerAccountLatestEndTime'],
-            ]),
+            (string) json_encode($stateEncode),
         );
-
-        $this->writeManifest($this->getDataDir() . '/out/tables/queries.csv.manifest');
-        $this->writeManifest($this->getDataDir() . '/out/tables/queries_reader_account.csv.manifest');
     }
 
     private function writeManifest(string $path): void
