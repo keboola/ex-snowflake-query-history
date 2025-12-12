@@ -5,11 +5,10 @@ declare(strict_types=1);
 namespace Keboola\SnowflakeQueryHistory;
 
 use Exception;
-use http\QueryString;
 use Keboola\Component\BaseComponent;
-use Keboola\Component\Config\BaseConfig;
 use Keboola\Csv\CsvWriter;
 use Keboola\SnowflakeDbAdapter\Connection;
+use Keboola\SnowflakeDbAdapter\Exception\RuntimeException;
 use Keboola\SnowflakeQueryHistory\Config\Config;
 use Keboola\SnowflakeQueryHistory\Config\ConfigDefinition;
 use Psr\Log\LoggerInterface;
@@ -22,7 +21,9 @@ class Component extends BaseComponent
 {
     private Connection $connection;
 
-    private Fetcher $fetcher;
+    private Fetcher $accountFetcher;
+
+    private ReaderAccountUsageFetcher $readerAccountFetcher;
 
     public function __construct(LoggerInterface $logger)
     {
@@ -32,7 +33,8 @@ class Component extends BaseComponent
             $this->getConfig()->getConnectionConfig(),
         );
 
-        $this->fetcher = new Fetcher($this->connection);
+        $this->accountFetcher = new AccountUsageFetcher($this->connection);
+        $this->readerAccountFetcher = new ReaderAccountUsageFetcher($this->connection);
     }
 
     protected function run(): void
@@ -54,27 +56,42 @@ class Component extends BaseComponent
 
         $this->getLogger()->info("Fetching query history from {$this->getConfig()->getHost()}");
 
-        $csvFile = new CsvWriter($this->getDataDir() . '/out/tables/queries.csv');
+        $accountQueries = new CsvWriter($this->getDataDir() . '/out/tables/queries.csv');
+        $readerAccountQueries = new CsvWriter($this->getDataDir() . '/out/tables/queries_reader_account.csv');
 
         $stats = [
             'latestEndTime' => null,
             'rowsFetched' => 0,
             'lastProcesssedQueryEndTime' => null,
+            'readerAccountLatestEndTime' => null,
+            'readerAccountRowsFetched' => 0,
+            'readerAccountLastProcessedQueryEndTime' => null,
         ];
 
+        $stateEncode = [
+            'latestEndTime' => null,
+            'readerAccountLatestEndTime' => null,
+        ];
+
+        // INFORMATION_SCHEMA.QUERY_HISTORY()
         if (isset($stateDecoded['latestEndTime'])) {
             $startTime = $stateDecoded['latestEndTime'];
+            $stateEncode['latestEndTime'] = $startTime;
+
             $this->getLogger()->info(sprintf(
-                'Fetching queries completed after %s (UTC) set by last execution.',
+                'INFORMATION_SCHEMA: Fetching queries completed after %s (UTC) set by last execution.',
                 $startTime,
             ));
         } else {
             $startTime = date('Y-m-d H:i:s', strtotime('-1 hour'));
-            $this->getLogger()->info(sprintf('Fetching queries completed in last hour - %s (UTC)', $startTime));
+            $this->getLogger()->info(sprintf(
+                'INFORMATION_SCHEMA: Fetching queries completed in last hour - %s (UTC)',
+                $startTime,
+            ));
         }
 
-        $this->fetcher->fetchHistory(
-            function (array $queryRow, int $rowNumber) use ($csvFile, &$stats): void {
+        $this->accountFetcher->fetchHistory(
+            function (array $queryRow, int $rowNumber) use ($accountQueries, &$stats): void {
                 /** @var array<string, string|int> $queryRow */
                 if ($rowNumber === 0) {
                     // most recent query
@@ -83,7 +100,7 @@ class Component extends BaseComponent
 
                 if ($rowNumber > 0 && $rowNumber % 10000 === 0) {
                     $this->getLogger()->info(sprintf(
-                        '%d queries fetched total, last processed query end time %s (UTC)',
+                        'INFORMATION_SCHEMA: %d queries fetched total, last processed query end time %s (UTC)',
                         $rowNumber,
                         $queryRow['END_TIME'],
                     ));
@@ -91,7 +108,7 @@ class Component extends BaseComponent
 
                 $stats['rowsFetched'] = $rowNumber;
                 $stats['lastProcesssedQueryEndTime'] = $queryRow['END_TIME'];
-                $csvFile->writeRow($queryRow);
+                $accountQueries->writeRow($queryRow);
             },
             [
                 'start' => $startTime,
@@ -99,69 +116,129 @@ class Component extends BaseComponent
         );
 
         $this->getLogger()->info(sprintf(
-            '%d queries fetched total, last processed query end time %s (UTC)',
+            'INFORMATION_SCHEMA: %d queries fetched total, last processed query end time %s (UTC)',
             $stats['rowsFetched'],
             $stats['lastProcesssedQueryEndTime'],
         ));
 
         $this->getLogger()->info(sprintf(
-            'Latest query end time is %s (UTC). Next execution will fetch queries that have completed later.',
+            'INFORMATION_SCHEMA: Latest query end time is %s (UTC). Next execution will fetch queries that have completed later.', // phpcs:ignore
             $stats['latestEndTime'],
         ));
 
-        // write state
+        $stateEncode['latestEndTime'] = $stats['latestEndTime'];
+        $this->writeManifest($this->getDataDir() . '/out/tables/queries.csv.manifest');
+
+        // READER_ACCOUNT_USAGE.QUERY_HISTORY
+        if (isset($stateDecoded['readerAccountLatestEndTime'])) {
+            $readerAccountStartTime = $stateDecoded['readerAccountLatestEndTime'];
+            $stateEncode['readerAccountLatestEndTime'] = $readerAccountStartTime;
+
+            $this->getLogger()->info(sprintf(
+                'READER_ACCOUNT_USAGE: Fetching queries completed after %s (UTC) set by last execution.',
+                $readerAccountStartTime,
+            ));
+        } else {
+            $readerAccountStartTime = date('Y-m-d H:i:s', strtotime('-1 hour'));
+            $this->getLogger()->info(sprintf(
+                'READER_ACCOUNT_USAGE: Fetching queries completed in last hour - %s (UTC)',
+                $readerAccountStartTime,
+            ));
+        }
+
+        try {
+            $this->readerAccountFetcher->fetchHistory(
+                function (array $queryRow, int $rowNumber) use ($readerAccountQueries, &$stats): void {
+                    /** @var array<string, string|int> $queryRow */
+                    if ($rowNumber === 0) {
+                        // most recent query
+                        $stats['readerAccountLatestEndTime'] = $queryRow['END_TIME'];
+                    }
+
+                    if ($rowNumber > 0 && $rowNumber % 10000 === 0) {
+                        $this->getLogger()->info(sprintf(
+                            'READER_ACCOUNT_USAGE: %d queries fetched total, last processed query end time %s (UTC)',
+                            $rowNumber,
+                            $queryRow['END_TIME'],
+                        ));
+                    }
+
+                    $stats['readerAccountRowsFetched'] = $rowNumber;
+                    $stats['readerAccountLastProcessedQueryEndTime'] = $queryRow['END_TIME'];
+                    $readerAccountQueries->writeRow($queryRow);
+                },
+                [
+                    'start' => $readerAccountStartTime,
+                ],
+            );
+
+            $this->getLogger()->info(sprintf(
+                'READER_ACCOUNT_USAGE: %d queries fetched total, last processed query end time %s (UTC)',
+                $stats['readerAccountRowsFetched'],
+                $stats['readerAccountLastProcessedQueryEndTime'],
+            ));
+
+            $this->getLogger()->info(sprintf(
+                'READER_ACCOUNT_USAGE: Latest query end time is %s (UTC). Next execution will fetch queries that have completed later.', // phpcs:ignore
+                $stats['readerAccountLatestEndTime'],
+            ));
+        } catch (RuntimeException $e) {
+            $this->getLogger()->error($e->getMessage());
+        }
+
+        $stateEncode['readerAccountLatestEndTime'] = $stats['readerAccountLatestEndTime'];
+        $this->writeManifest($this->getDataDir() . '/out/tables/queries_reader_account.csv.manifest');
+
         (new Filesystem())->dumpFile(
             $this->getDataDir() . '/out/state.json',
-            (string) json_encode(
-                [
-                'latestEndTime' => $stats['latestEndTime'],
-                ],
-            ),
+            (string) json_encode($stateEncode),
         );
+    }
 
-        // write manifest
+    private function writeManifest(string $path): void
+    {
         (new Filesystem())->dumpFile(
-            $this->getDataDir() . '/out/tables/queries.csv.manifest',
+            $path,
             (string) json_encode(
                 [
-                'primary_key' => ['QUERY_ID'],
-                'incremental' => true,
-                'columns' => [
-                'QUERY_ID',
-                'QUERY_TEXT',
-                'DATABASE_NAME',
-                'SCHEMA_NAME',
-                'QUERY_TYPE',
-                'SESSION_ID',
-                'USER_NAME',
-                'ROLE_NAME',
-                'WAREHOUSE_NAME',
-                'WAREHOUSE_SIZE',
-                'WAREHOUSE_TYPE',
-                'CLUSTER_NUMBER',
-                'QUERY_TAG',
-                'EXECUTION_STATUS',
-                'ERROR_CODE',
-                'ERROR_MESSAGE',
-                'START_TIME',
-                'END_TIME',
-                'BYTES_SCANNED',
-                'ROWS_PRODUCED',
-                'TOTAL_ELAPSED_TIME',
-                'COMPILATION_TIME',
-                'EXECUTION_TIME',
-                'QUEUED_PROVISIONING_TIME',
-                'QUEUED_REPAIR_TIME',
-                'QUEUED_OVERLOAD_TIME',
-                'TRANSACTION_BLOCKED_TIME',
-                'OUTBOUND_DATA_TRANSFER_CLOUD',
-                'OUTBOUND_DATA_TRANSFER_REGION',
-                'OUTBOUND_DATA_TRANSFER_BYTES',
-                'INBOUND_DATA_TRANSFER_CLOUD',
-                'INBOUND_DATA_TRANSFER_REGION',
-                'INBOUND_DATA_TRANSFER_BYTES',
-                'CREDITS_USED_CLOUD_SERVICES',
-                ],
+                    'primary_key' => ['QUERY_ID'],
+                    'incremental' => true,
+                    'columns' => [
+                        'QUERY_ID',
+                        'QUERY_TEXT',
+                        'DATABASE_NAME',
+                        'SCHEMA_NAME',
+                        'QUERY_TYPE',
+                        'SESSION_ID',
+                        'USER_NAME',
+                        'ROLE_NAME',
+                        'WAREHOUSE_NAME',
+                        'WAREHOUSE_SIZE',
+                        'WAREHOUSE_TYPE',
+                        'CLUSTER_NUMBER',
+                        'QUERY_TAG',
+                        'EXECUTION_STATUS',
+                        'ERROR_CODE',
+                        'ERROR_MESSAGE',
+                        'START_TIME',
+                        'END_TIME',
+                        'BYTES_SCANNED',
+                        'ROWS_PRODUCED',
+                        'TOTAL_ELAPSED_TIME',
+                        'COMPILATION_TIME',
+                        'EXECUTION_TIME',
+                        'QUEUED_PROVISIONING_TIME',
+                        'QUEUED_REPAIR_TIME',
+                        'QUEUED_OVERLOAD_TIME',
+                        'TRANSACTION_BLOCKED_TIME',
+                        'OUTBOUND_DATA_TRANSFER_CLOUD',
+                        'OUTBOUND_DATA_TRANSFER_REGION',
+                        'OUTBOUND_DATA_TRANSFER_BYTES',
+                        'INBOUND_DATA_TRANSFER_CLOUD',
+                        'INBOUND_DATA_TRANSFER_REGION',
+                        'INBOUND_DATA_TRANSFER_BYTES',
+                        'CREDITS_USED_CLOUD_SERVICES',
+                    ],
                 ],
             ),
         );

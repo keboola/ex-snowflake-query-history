@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Keboola\SnowflakeQueryHistory;
 
+use DateTime;
 use Keboola\SnowflakeDbAdapter\Connection;
 use PHPUnit\Framework\TestCase;
 
@@ -29,9 +30,9 @@ class FetcherTest extends TestCase
         $this->connection->query('alter session set timezone = \'UTC\'');
     }
 
-    public function testFetch(): void
+    public function testAccountUsageFetcher(): void
     {
-        $fetcher = new Fetcher($this->connection);
+        $fetcher = new AccountUsageFetcher($this->connection);
 
         // run test queries which should be later fetched
         $currentTimestamp = $this->connection
@@ -75,5 +76,22 @@ class FetcherTest extends TestCase
         );
 
         $this->assertEquals($queryRepeatCount, count($ids));
+    }
+
+    public function testReaderAccountUsageFetcher(): void
+    {
+        $now = new DateTime();
+
+        $fetcher = new ReaderAccountUsageFetcher($this->connection);
+        $result = $fetcher->fetchHistory(
+            function (): void {
+            },
+            [
+                'limit' => 3,
+                'start' => $now->format('Y-m-d H:i:s'),
+            ],
+        );
+
+        $this->assertEmpty($result);
     }
 }
