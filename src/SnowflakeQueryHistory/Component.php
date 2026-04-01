@@ -130,63 +130,68 @@ class Component extends BaseComponent
         $this->writeManifest($this->getDataDir() . '/out/tables/queries.csv.manifest');
 
         // READER_ACCOUNT_USAGE.QUERY_HISTORY
-        if (isset($stateDecoded['readerAccountLatestEndTime'])) {
-            $readerAccountStartTime = $stateDecoded['readerAccountLatestEndTime'];
-            $stateEncode['readerAccountLatestEndTime'] = $readerAccountStartTime;
-
-            $this->getLogger()->info(sprintf(
-                'READER_ACCOUNT_USAGE: Fetching queries completed after %s (UTC) set by last execution.',
-                $readerAccountStartTime,
-            ));
+        if ($this->getConfig()->getSkipReaderAccounts()) {
+            $this->getLogger()->info('READER_ACCOUNT_USAGE: Skipping reader account query history extraction (skipReaderAccounts is enabled).'); // phpcs:ignore
         } else {
-            $readerAccountStartTime = date('Y-m-d H:i:s', strtotime('-1 hour'));
-            $this->getLogger()->info(sprintf(
-                'READER_ACCOUNT_USAGE: Fetching queries completed in last hour - %s (UTC)',
-                $readerAccountStartTime,
-            ));
+            if (isset($stateDecoded['readerAccountLatestEndTime'])) {
+                $readerAccountStartTime = $stateDecoded['readerAccountLatestEndTime'];
+                $stateEncode['readerAccountLatestEndTime'] = $readerAccountStartTime;
+
+                $this->getLogger()->info(sprintf(
+                    'READER_ACCOUNT_USAGE: Fetching queries completed after %s (UTC) set by last execution.',
+                    $readerAccountStartTime,
+                ));
+            } else {
+                $readerAccountStartTime = date('Y-m-d H:i:s', strtotime('-1 hour'));
+                $this->getLogger()->info(sprintf(
+                    'READER_ACCOUNT_USAGE: Fetching queries completed in last hour - %s (UTC)',
+                    $readerAccountStartTime,
+                ));
+            }
+
+            try {
+                $this->readerAccountFetcher->fetchHistory(
+                    function (array $queryRow, int $rowNumber) use ($readerAccountQueries, &$stats): void {
+                        /** @var array<string, string|int> $queryRow */
+                        if ($rowNumber === 0) {
+                            // most recent query
+                            $stats['readerAccountLatestEndTime'] = $queryRow['END_TIME'];
+                        }
+
+                        if ($rowNumber > 0 && $rowNumber % 10000 === 0) {
+                            $this->getLogger()->info(sprintf(
+                                'READER_ACCOUNT_USAGE: %d queries fetched total, last processed query end time %s (UTC)', // phpcs:ignore
+                                $rowNumber,
+                                $queryRow['END_TIME'],
+                            ));
+                        }
+
+                        $stats['readerAccountRowsFetched'] = $rowNumber;
+                        $stats['readerAccountLastProcessedQueryEndTime'] = $queryRow['END_TIME'];
+                        $readerAccountQueries->writeRow($queryRow);
+                    },
+                    [
+                        'start' => $readerAccountStartTime,
+                    ],
+                );
+
+                $this->getLogger()->info(sprintf(
+                    'READER_ACCOUNT_USAGE: %d queries fetched total, last processed query end time %s (UTC)',
+                    $stats['readerAccountRowsFetched'],
+                    $stats['readerAccountLastProcessedQueryEndTime'],
+                ));
+
+                $this->getLogger()->info(sprintf(
+                    'READER_ACCOUNT_USAGE: Latest query end time is %s (UTC). Next execution will fetch queries that have completed later.', // phpcs:ignore
+                    $stats['readerAccountLatestEndTime'],
+                ));
+            } catch (RuntimeException $e) {
+                $this->getLogger()->error($e->getMessage());
+            }
+
+            $stateEncode['readerAccountLatestEndTime'] = $stats['readerAccountLatestEndTime'];
         }
 
-        try {
-            $this->readerAccountFetcher->fetchHistory(
-                function (array $queryRow, int $rowNumber) use ($readerAccountQueries, &$stats): void {
-                    /** @var array<string, string|int> $queryRow */
-                    if ($rowNumber === 0) {
-                        // most recent query
-                        $stats['readerAccountLatestEndTime'] = $queryRow['END_TIME'];
-                    }
-
-                    if ($rowNumber > 0 && $rowNumber % 10000 === 0) {
-                        $this->getLogger()->info(sprintf(
-                            'READER_ACCOUNT_USAGE: %d queries fetched total, last processed query end time %s (UTC)',
-                            $rowNumber,
-                            $queryRow['END_TIME'],
-                        ));
-                    }
-
-                    $stats['readerAccountRowsFetched'] = $rowNumber;
-                    $stats['readerAccountLastProcessedQueryEndTime'] = $queryRow['END_TIME'];
-                    $readerAccountQueries->writeRow($queryRow);
-                },
-                [
-                    'start' => $readerAccountStartTime,
-                ],
-            );
-
-            $this->getLogger()->info(sprintf(
-                'READER_ACCOUNT_USAGE: %d queries fetched total, last processed query end time %s (UTC)',
-                $stats['readerAccountRowsFetched'],
-                $stats['readerAccountLastProcessedQueryEndTime'],
-            ));
-
-            $this->getLogger()->info(sprintf(
-                'READER_ACCOUNT_USAGE: Latest query end time is %s (UTC). Next execution will fetch queries that have completed later.', // phpcs:ignore
-                $stats['readerAccountLatestEndTime'],
-            ));
-        } catch (RuntimeException $e) {
-            $this->getLogger()->error($e->getMessage());
-        }
-
-        $stateEncode['readerAccountLatestEndTime'] = $stats['readerAccountLatestEndTime'];
         $this->writeManifest($this->getDataDir() . '/out/tables/queries_reader_account.csv.manifest');
 
         (new Filesystem())->dumpFile(

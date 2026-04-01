@@ -33,6 +33,11 @@ class Config extends BaseConfig
         return $this->getStringValue(['parameters', 'host']);
     }
 
+    public function getSkipReaderAccounts(): bool
+    {
+        return (bool) $this->getValue(['parameters', 'skipReaderAccounts'], false);
+    }
+
     private function hasPrivateKey(): bool
     {
         return !empty($this->getValue(['parameters', '#privateKey'], ''));
