@@ -13,28 +13,17 @@ class Config extends BaseConfig
      */
     public function getConnectionConfig(): array
     {
-        $options = [
+        return [
             'host' => $this->getStringValue(['parameters', 'host']),
             'user' => $this->getStringValue(['parameters', 'user']),
-            'password' => $this->getStringValue(['parameters', '#password'], ''),
+            'privateKey' => $this->getStringValue(['parameters', '#privateKey']),
             'warehouse' => $this->getStringValue(['parameters', 'warehouse']),
             'database' => $this->getStringValue(['parameters', 'database']),
         ];
-
-        if ($this->hasPrivateKey()) {
-            $options['privateKey'] = $this->getStringValue(['parameters', '#privateKey']);
-        }
-
-        return $options;
     }
 
     public function getHost(): string
     {
         return $this->getStringValue(['parameters', 'host']);
-    }
-
-    private function hasPrivateKey(): bool
-    {
-        return !empty($this->getValue(['parameters', '#privateKey'], ''));
     }
 }

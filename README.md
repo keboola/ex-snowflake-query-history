@@ -23,7 +23,7 @@ grant monitor on warehouse some_warehouse to role keboola_monitoring;
 
 
 create user keboola_monitoring
-password = 'PASSWORD'
+rsa_public_key = 'MIIBIj...'
 default_role = 'KEBOOLA_MONITORING';
 
 grant role keboola_monitoring to user keboola_monitoring;
@@ -40,7 +40,7 @@ grant role keboola_monitoring to user keboola_monitoring;
     "host",
     "user",
     "database",
-    "#password",
+    "#privateKey",
     "warehouse"
   ],
   "properties": {
@@ -56,8 +56,8 @@ grant role keboola_monitoring to user keboola_monitoring;
       "minLength": 1,
       "default": ""
     },
-    "#password": {
-      "title": "Password",
+    "#privateKey": {
+      "title": "Private Key",
       "type": "string",
       "format": "password",
       "minLength": 1,
