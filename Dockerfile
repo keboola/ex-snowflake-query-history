@@ -65,9 +65,8 @@ RUN mkdir -p ~/.gnupg \
     && mkdir -p /etc/gnupg \
     && echo "allow-weak-digest-algos" >> /etc/gnupg/gpg.conf \
     && mkdir -p /usr/share/debsig/keyrings/$SNOWFLAKE_GPG_FINGERPRINT \
-    && if ! gpg --keyserver hkp://keys.gnupg.net --recv-keys $SNOWFLAKE_GPG_FINGERPRINT; then \
-      gpg --keyserver hkp://keyserver.ubuntu.com --recv-keys $SNOWFLAKE_GPG_FINGERPRINT;  \
-    fi \
+    && gpg --keyserver hkp://keyserver.ubuntu.com --keyserver-options timeout=30 \
+        --recv-keys $SNOWFLAKE_GPG_FINGERPRINT \
     && gpg --export $SNOWFLAKE_GPG_FINGERPRINT > /usr/share/debsig/keyrings/$SNOWFLAKE_GPG_FINGERPRINT/debsig.gpg \
     && debsig-verify /tmp/snowflake-odbc.deb \
     && gpg --batch --delete-key --yes $SNOWFLAKE_GPG_FINGERPRINT \
