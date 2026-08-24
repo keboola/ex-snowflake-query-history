@@ -35,6 +35,9 @@ class ConfigDefinition extends BaseConfigDefinition
             ->end()
             ->scalarNode('#privateKey')
             ->end()
+            ->booleanNode('skipReaderAccounts')
+            ->defaultFalse()
+            ->end()
             ->end();
 
         return $parametersNode;
