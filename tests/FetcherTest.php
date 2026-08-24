@@ -17,14 +17,10 @@ class FetcherTest extends TestCase
         $options = [
             'host' => getenv('SNOWFLAKE_HOST'),
             'user' => getenv('SNOWFLAKE_USER'),
-            'password' => getenv('SNOWFLAKE_PASSWORD') ?? '',
+            'privateKey' => getenv('SNOWFLAKE_PRIVATEKEY'),
             'database' => getenv('SNOWFLAKE_DATABASE'),
             'warehouse' => getenv('SNOWFLAKE_WAREHOUSE'),
         ];
-
-        if (getenv('SNOWFLAKE_PRIVATEKEY') !== false) {
-            $options['privateKey'] = getenv('SNOWFLAKE_PRIVATEKEY');
-        }
 
         $this->connection = new Connection($options);
         $this->connection->query('alter session set timezone = \'UTC\'');

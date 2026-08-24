@@ -31,9 +31,9 @@ class ConfigDefinition extends BaseConfigDefinition
             ->isRequired()
             ->cannotBeEmpty()
             ->end()
-            ->scalarNode('#password')
-            ->end()
             ->scalarNode('#privateKey')
+            ->isRequired()
+            ->cannotBeEmpty()
             ->end()
             ->end();
 
